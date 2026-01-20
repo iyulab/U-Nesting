@@ -8,11 +8,12 @@
 //! ## Features
 //!
 //! - Box geometry with 6-orientation support
-//! - Multiple placement strategies (Layer, GA)
+//! - Multiple placement strategies (Layer, GA, BRKGA)
 //! - Mass and stacking constraints
 //! - Configurable orientation constraints (Any, Upright, Fixed)
 
 pub mod boundary;
+pub mod brkga_packing;
 pub mod ga_packing;
 pub mod geometry;
 pub mod packer;

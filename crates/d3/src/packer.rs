@@ -1,8 +1,10 @@
 //! 3D bin packing solver.
 
 use crate::boundary::Boundary3D;
+use crate::brkga_packing::run_brkga_packing;
 use crate::ga_packing::run_ga_packing;
 use crate::geometry::Geometry3D;
+use u_nesting_core::brkga::BrkgaConfig;
 use u_nesting_core::ga::GaConfig;
 use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::solver::{Config, ProgressCallback, Solver, Strategy};
@@ -165,6 +167,33 @@ impl Packer3D {
 
         Ok(result)
     }
+
+    /// BRKGA (Biased Random-Key Genetic Algorithm) based packing optimization.
+    ///
+    /// Uses random-key encoding and biased crossover for robust optimization.
+    fn brkga(
+        &self,
+        geometries: &[Geometry3D],
+        boundary: &Boundary3D,
+    ) -> Result<SolveResult<f64>> {
+        // Configure BRKGA with reasonable defaults
+        let brkga_config = BrkgaConfig::default()
+            .with_population_size(50)
+            .with_max_generations(100)
+            .with_elite_fraction(0.2)
+            .with_mutant_fraction(0.15)
+            .with_elite_bias(0.7);
+
+        let result = run_brkga_packing(
+            geometries,
+            boundary,
+            &self.config,
+            brkga_config,
+            self.cancelled.clone(),
+        );
+
+        Ok(result)
+    }
 }
 
 impl Solver for Packer3D {
@@ -186,9 +215,8 @@ impl Solver for Packer3D {
             Strategy::ExtremePoint | Strategy::BottomLeftFill => {
                 self.layer_packing(geometries, boundary)
             }
-            Strategy::GeneticAlgorithm => {
-                self.genetic_algorithm(geometries, boundary)
-            }
+            Strategy::GeneticAlgorithm => self.genetic_algorithm(geometries, boundary),
+            Strategy::Brkga => self.brkga(geometries, boundary),
             _ => {
                 // Fall back to layer packing for unimplemented strategies
                 log::warn!(
@@ -326,5 +354,40 @@ mod tests {
 
         // GA should find a way to place both boxes
         assert_eq!(result.placements.len(), 2);
+    }
+
+    #[test]
+    fn test_brkga_strategy_basic() {
+        let geometries = vec![
+            Geometry3D::new("B1", 20.0, 20.0, 20.0).with_quantity(2),
+            Geometry3D::new("B2", 15.0, 15.0, 15.0).with_quantity(2),
+        ];
+
+        let boundary = Boundary3D::new(100.0, 80.0, 50.0);
+        let config = Config::default().with_strategy(Strategy::Brkga);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // BRKGA should place items and achieve positive utilization
+        assert!(result.utilization > 0.0);
+        assert!(!result.placements.is_empty());
+        assert_eq!(result.strategy, Some("BRKGA".to_string()));
+    }
+
+    #[test]
+    fn test_brkga_strategy_all_placed() {
+        // Small number of boxes that should all fit
+        let geometries = vec![Geometry3D::new("B1", 10.0, 10.0, 10.0).with_quantity(4)];
+
+        let boundary = Boundary3D::new(100.0, 100.0, 100.0);
+        let config = Config::default().with_strategy(Strategy::Brkga);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // All 4 boxes should be placed
+        assert_eq!(result.placements.len(), 4);
+        assert!(result.unplaced.is_empty());
     }
 }

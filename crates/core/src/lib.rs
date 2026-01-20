@@ -17,6 +17,7 @@
 //!
 //! - `serde`: Enable serialization/deserialization support
 
+pub mod brkga;
 pub mod error;
 pub mod ga;
 pub mod geometry;
@@ -27,6 +28,7 @@ pub mod transform;
 
 // Re-exports
 pub use error::{Error, Result};
+pub use brkga::{BrkgaConfig, BrkgaProblem, BrkgaResult, BrkgaRunner, RandomKeyChromosome};
 pub use ga::{GaConfig, GaProblem, GaResult, GaRunner, Individual, PermutationChromosome};
 pub use geometry::{
     Boundary, Boundary2DExt, Boundary3DExt, Geometry, Geometry2DExt, Geometry3DExt, GeometryId,

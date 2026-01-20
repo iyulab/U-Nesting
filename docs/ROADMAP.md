@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01
-> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (70%), Phase 3 진행 중 (70%)
+> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (70%), Phase 3 진행 중 (85%)
 
 ---
 
@@ -13,7 +13,7 @@
 |-------|------|----------|------|
 | **Phase 1** | 5-6주 | Geometry Core (2D/3D 기초) | ✅ 완료 |
 | **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | 🔄 진행 중 (70%) |
-| **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | 🔄 진행 중 (70%) |
+| **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | 🔄 진행 중 (85%) |
 | **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | ⏳ 대기 |
 | **Phase 5** | 3-4주 | FFI 및 통합 API | 🔄 진행 중 (60%) |
 | **Phase 6** | 2-3주 | 벤치마크 및 릴리스 준비 | ⏳ 대기 |
@@ -163,10 +163,20 @@ Genetic Algorithm 및 Simulated Annealing 최적화 엔진 구현
 > - NFP-guided decoder로 collision-free placement 생성
 > - Fitness = placement_ratio * 100 + utilization * 10
 
-#### 3.4 BRKGA 구현 (1주) ❌ 미구현
-- [ ] Random-key encoding
-- [ ] Biased crossover (elite parent preference)
-- [ ] Decoder: random keys → placement sequence
+#### 3.4 BRKGA 구현 (1주) ✅ 완료
+- [x] Random-key encoding - `core/brkga.rs`
+- [x] Biased crossover (elite parent preference)
+- [x] Decoder: random keys → placement sequence
+- [x] 2D Nesting BRKGA - `d2/brkga_nesting.rs`
+- [x] 3D Packing BRKGA - `d3/brkga_packing.rs`
+- [x] `Strategy::Brkga` 지원
+
+> **구현 내용**:
+> - `RandomKeyChromosome`: [0,1) 범위의 random key 유전자
+> - Biased crossover: elite parent 70% 확률로 선호
+> - Population 구성: elite 20%, mutants 15%, crossover offspring 65%
+> - Decoder: sorted indices로 permutation 변환, discrete decoding for rotations
+> - Fitness = placement_ratio * 100 + utilization * 10
 
 #### 3.5 3D Bin Packing GA (1주) ✅ 완료
 - [x] Box orientation encoding (6가지 회전)
@@ -332,6 +342,9 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | Packer3D (Layer) | `d3/packer.rs` | Layer-based 배치 |
 | Packer3D (GA) | `d3/packer.rs`, `d3/ga_packing.rs` | GA 기반 최적화 |
 | GA Framework | `core/ga.rs` | Individual, GaProblem, GaRunner |
+| BRKGA Framework | `core/brkga.rs` | RandomKeyChromosome, BrkgaProblem, BrkgaRunner |
+| Nester2D (BRKGA) | `d2/brkga_nesting.rs` | BRKGA 기반 2D nesting |
+| Packer3D (BRKGA) | `d3/brkga_packing.rs` | BRKGA 기반 3D packing |
 | FFI JSON API | `ffi/api.rs` | C ABI, JSON 요청/응답 |
 | NFP Convex | `d2/nfp.rs` | Minkowski sum 기반 NFP 계산 |
 | NFP Cache | `d2/nfp.rs` | Thread-safe 캐싱 시스템 |

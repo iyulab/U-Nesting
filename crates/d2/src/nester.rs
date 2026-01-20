@@ -1,11 +1,13 @@
 //! 2D nesting solver.
 
 use crate::boundary::Boundary2D;
+use crate::brkga_nesting::run_brkga_nesting;
 use crate::ga_nesting::run_ga_nesting;
 use crate::geometry::Geometry2D;
 use crate::nfp::{
     compute_ifp, compute_nfp, find_bottom_left_placement, Nfp, NfpCache, PlacedGeometry,
 };
+use u_nesting_core::brkga::BrkgaConfig;
 use u_nesting_core::ga::GaConfig;
 use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::solver::{Config, ProgressCallback, Solver, Strategy};
@@ -381,6 +383,33 @@ impl Nester2D {
 
         Ok(result)
     }
+
+    /// BRKGA (Biased Random-Key Genetic Algorithm) based nesting optimization.
+    ///
+    /// Uses random-key encoding and biased crossover for robust optimization.
+    fn brkga(
+        &self,
+        geometries: &[Geometry2D],
+        boundary: &Boundary2D,
+    ) -> Result<SolveResult<f64>> {
+        // Configure BRKGA with reasonable defaults
+        let brkga_config = BrkgaConfig::default()
+            .with_population_size(50)
+            .with_max_generations(100)
+            .with_elite_fraction(0.2)
+            .with_mutant_fraction(0.15)
+            .with_elite_bias(0.7);
+
+        let result = run_brkga_nesting(
+            geometries,
+            boundary,
+            &self.config,
+            brkga_config,
+            self.cancelled.clone(),
+        );
+
+        Ok(result)
+    }
 }
 
 /// Computes the centroid of a polygon.
@@ -412,9 +441,8 @@ impl Solver for Nester2D {
         match self.config.strategy {
             Strategy::BottomLeftFill => self.bottom_left_fill(geometries, boundary),
             Strategy::NfpGuided => self.nfp_guided_blf(geometries, boundary),
-            Strategy::GeneticAlgorithm => {
-                self.genetic_algorithm(geometries, boundary)
-            }
+            Strategy::GeneticAlgorithm => self.genetic_algorithm(geometries, boundary),
+            Strategy::Brkga => self.brkga(geometries, boundary),
             _ => {
                 // Fall back to NFP-guided BLF for other strategies
                 log::warn!(
@@ -624,6 +652,43 @@ mod tests {
 
         let boundary = Boundary2D::rectangle(100.0, 100.0);
         let config = Config::default().with_strategy(Strategy::GeneticAlgorithm);
+        let nester = Nester2D::new(config);
+
+        let result = nester.solve(&geometries, &boundary).unwrap();
+
+        // All 4 pieces should fit
+        assert_eq!(result.placements.len(), 4);
+        assert!(result.unplaced.is_empty());
+    }
+
+    #[test]
+    fn test_brkga_strategy_basic() {
+        let geometries = vec![
+            Geometry2D::rectangle("R1", 20.0, 10.0).with_quantity(2),
+            Geometry2D::rectangle("R2", 15.0, 15.0).with_quantity(2),
+        ];
+
+        let boundary = Boundary2D::rectangle(100.0, 50.0);
+        let config = Config::default().with_strategy(Strategy::Brkga);
+        let nester = Nester2D::new(config);
+
+        let result = nester.solve(&geometries, &boundary).unwrap();
+
+        assert!(result.utilization > 0.0);
+        assert!(!result.placements.is_empty());
+        // BRKGA should report generations and fitness
+        assert!(result.generations.is_some());
+        assert!(result.best_fitness.is_some());
+        assert!(result.strategy == Some("BRKGA".to_string()));
+    }
+
+    #[test]
+    fn test_brkga_strategy_all_placed() {
+        // Easy case: 4 small rectangles in large boundary
+        let geometries = vec![Geometry2D::rectangle("R1", 20.0, 20.0).with_quantity(4)];
+
+        let boundary = Boundary2D::rectangle(100.0, 100.0);
+        let config = Config::default().with_strategy(Strategy::Brkga);
         let nester = Nester2D::new(config);
 
         let result = nester.solve(&geometries, &boundary).unwrap();

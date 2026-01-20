@@ -18,6 +18,8 @@ pub enum Strategy {
     NfpGuided,
     /// Genetic Algorithm (slower, higher quality).
     GeneticAlgorithm,
+    /// Biased Random-Key Genetic Algorithm (balanced, robust).
+    Brkga,
     /// Simulated Annealing.
     SimulatedAnnealing,
     /// Extreme Point heuristic (3D only).
