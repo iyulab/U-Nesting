@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01
-> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (70%), Phase 3 진행 중 (50%)
+> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (70%), Phase 3 진행 중 (70%)
 
 ---
 
@@ -13,7 +13,7 @@
 |-------|------|----------|------|
 | **Phase 1** | 5-6주 | Geometry Core (2D/3D 기초) | ✅ 완료 |
 | **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | 🔄 진행 중 (70%) |
-| **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | 🔄 진행 중 (50%) |
+| **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | 🔄 진행 중 (70%) |
 | **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | ⏳ 대기 |
 | **Phase 5** | 3-4주 | FFI 및 통합 API | 🔄 진행 중 (60%) |
 | **Phase 6** | 2-3주 | 벤치마크 및 릴리스 준비 | ⏳ 대기 |
@@ -168,10 +168,18 @@ Genetic Algorithm 및 Simulated Annealing 최적화 엔진 구현
 - [ ] Biased crossover (elite parent preference)
 - [ ] Decoder: random keys → placement sequence
 
-#### 3.5 3D Bin Packing GA (1주) ❌ 미구현
-- [ ] Box orientation encoding (6가지 회전)
-- [ ] Extreme Point 기반 decoder
-- [ ] Stability constraint 통합
+#### 3.5 3D Bin Packing GA (1주) ✅ 완료
+- [x] Box orientation encoding (6가지 회전)
+- [x] Layer-based decoder with orientation support
+- [ ] Extreme Point 기반 decoder (향후 개선)
+- [ ] Stability constraint 통합 (향후 개선)
+
+> **구현 내용**:
+> - `PackingChromosome`: 배치 순서(permutation) + orientation 유전자
+> - Order Crossover (OX1) 및 Swap/Inversion/Orientation mutation
+> - Layer-based decoder로 collision-free placement 생성
+> - Mass constraint 지원
+> - Fitness = placement_ratio * 100 + utilization * 10
 
 #### 3.6 Simulated Annealing (1주) ❌ 미구현
 - [ ] Cooling schedule: Geometric, Adaptive
@@ -322,6 +330,7 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | Nester2D (NFP-guided) | `d2/nester.rs` | NFP 기반 최적 배치 |
 | Nester2D (GA) | `d2/nester.rs`, `d2/ga_nesting.rs` | GA 기반 최적화 |
 | Packer3D (Layer) | `d3/packer.rs` | Layer-based 배치 |
+| Packer3D (GA) | `d3/packer.rs`, `d3/ga_packing.rs` | GA 기반 최적화 |
 | GA Framework | `core/ga.rs` | Individual, GaProblem, GaRunner |
 | FFI JSON API | `ffi/api.rs` | C ABI, JSON 요청/응답 |
 | NFP Convex | `d2/nfp.rs` | Minkowski sum 기반 NFP 계산 |

@@ -1,9 +1,11 @@
 //! 3D bin packing solver.
 
 use crate::boundary::Boundary3D;
+use crate::ga_packing::run_ga_packing;
 use crate::geometry::Geometry3D;
+use u_nesting_core::ga::GaConfig;
 use u_nesting_core::geometry::{Boundary, Geometry};
-use u_nesting_core::solver::{Config, ProgressCallback, Solver};
+use u_nesting_core::solver::{Config, ProgressCallback, Solver, Strategy};
 use u_nesting_core::{Placement, Result, SolveResult};
 
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -136,6 +138,33 @@ impl Packer3D {
 
         Ok(result)
     }
+
+    /// Genetic Algorithm based packing optimization.
+    ///
+    /// Uses GA to optimize placement order and orientations, with layer-based
+    /// decoding for collision-free placements.
+    fn genetic_algorithm(
+        &self,
+        geometries: &[Geometry3D],
+        boundary: &Boundary3D,
+    ) -> Result<SolveResult<f64>> {
+        // Configure GA with reasonable defaults
+        let ga_config = GaConfig::default()
+            .with_population_size(50)
+            .with_max_generations(100)
+            .with_crossover_rate(0.85)
+            .with_mutation_rate(0.15);
+
+        let result = run_ga_packing(
+            geometries,
+            boundary,
+            &self.config,
+            ga_config,
+            self.cancelled.clone(),
+        );
+
+        Ok(result)
+    }
 }
 
 impl Solver for Packer3D {
@@ -154,8 +183,11 @@ impl Solver for Packer3D {
         self.cancelled.store(false, Ordering::Relaxed);
 
         match self.config.strategy {
-            u_nesting_core::Strategy::ExtremePoint | u_nesting_core::Strategy::BottomLeftFill => {
+            Strategy::ExtremePoint | Strategy::BottomLeftFill => {
                 self.layer_packing(geometries, boundary)
+            }
+            Strategy::GeneticAlgorithm => {
+                self.genetic_algorithm(geometries, boundary)
             }
             _ => {
                 // Fall back to layer packing for unimplemented strategies
@@ -238,5 +270,61 @@ mod tests {
             assert!(p.position[1] >= 5.0);
             assert!(p.position[2] >= 5.0);
         }
+    }
+
+    #[test]
+    fn test_ga_strategy_basic() {
+        let geometries = vec![
+            Geometry3D::new("B1", 20.0, 20.0, 20.0).with_quantity(2),
+            Geometry3D::new("B2", 15.0, 15.0, 15.0).with_quantity(2),
+        ];
+
+        let boundary = Boundary3D::new(100.0, 80.0, 50.0);
+        let config = Config::default().with_strategy(Strategy::GeneticAlgorithm);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // GA should place items and achieve positive utilization
+        assert!(result.utilization > 0.0);
+        assert!(!result.placements.is_empty());
+    }
+
+    #[test]
+    fn test_ga_strategy_all_placed() {
+        // Small number of boxes that should all fit
+        let geometries = vec![Geometry3D::new("B1", 10.0, 10.0, 10.0).with_quantity(4)];
+
+        let boundary = Boundary3D::new(100.0, 100.0, 100.0);
+        let config = Config::default().with_strategy(Strategy::GeneticAlgorithm);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // All 4 boxes should be placed
+        assert_eq!(result.placements.len(), 4);
+        assert!(result.unplaced.is_empty());
+    }
+
+    #[test]
+    fn test_ga_strategy_with_orientations() {
+        use crate::geometry::OrientationConstraint;
+
+        // Box that fits better when rotated
+        let geometries = vec![
+            Geometry3D::new("B1", 50.0, 10.0, 10.0)
+                .with_quantity(2)
+                .with_orientation(OrientationConstraint::Any),
+        ];
+
+        // Container where orientation matters
+        let boundary = Boundary3D::new(60.0, 60.0, 60.0);
+        let config = Config::default().with_strategy(Strategy::GeneticAlgorithm);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // GA should find a way to place both boxes
+        assert_eq!(result.placements.len(), 2);
     }
 }

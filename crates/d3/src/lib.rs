@@ -4,8 +4,16 @@
 //!
 //! This crate provides box and mesh-based 3D packing with collision detection
 //! and various placement algorithms.
+//!
+//! ## Features
+//!
+//! - Box geometry with 6-orientation support
+//! - Multiple placement strategies (Layer, GA)
+//! - Mass and stacking constraints
+//! - Configurable orientation constraints (Any, Upright, Fixed)
 
 pub mod boundary;
+pub mod ga_packing;
 pub mod geometry;
 pub mod packer;
 
