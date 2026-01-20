@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01
-> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (70%), Phase 3 진행 중 (85%)
+> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (70%), Phase 3 완료 (100%)
 
 ---
 
@@ -13,7 +13,7 @@
 |-------|------|----------|------|
 | **Phase 1** | 5-6주 | Geometry Core (2D/3D 기초) | ✅ 완료 |
 | **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | 🔄 진행 중 (70%) |
-| **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | 🔄 진행 중 (85%) |
+| **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | ✅ 완료 |
 | **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | ⏳ 대기 |
 | **Phase 5** | 3-4주 | FFI 및 통합 API | 🔄 진행 중 (60%) |
 | **Phase 6** | 2-3주 | 벤치마크 및 릴리스 준비 | ⏳ 대기 |
@@ -125,7 +125,7 @@ No-Fit Polygon 계산 엔진 및 기본 배치 알고리즘 구현
 
 ---
 
-## Phase 3: Optimization Algorithms (5-6주) 🔄 진행 중
+## Phase 3: Optimization Algorithms (5-6주) ✅ 완료
 
 ### 목표
 Genetic Algorithm 및 Simulated Annealing 최적화 엔진 구현
@@ -191,11 +191,20 @@ Genetic Algorithm 및 Simulated Annealing 최적화 엔진 구현
 > - Mass constraint 지원
 > - Fitness = placement_ratio * 100 + utilization * 10
 
-#### 3.6 Simulated Annealing (1주) ❌ 미구현
-- [ ] Cooling schedule: Geometric, Adaptive
-- [ ] Neighborhood operators: Relocate, Swap, Chain
-- [ ] Acceptance probability: exp(-ΔE/T)
-- [ ] Reheating 전략
+#### 3.6 Simulated Annealing (1주) ✅ 완료
+- [x] Cooling schedule: Geometric, Linear, Adaptive, LundyMees - `core/sa.rs`
+- [x] Neighborhood operators: Swap, Relocate, Inversion, Rotation, Chain
+- [x] Acceptance probability: exp(-ΔE/T)
+- [x] Reheating 전략 (stagnation 감지 시)
+- [x] 2D Nesting SA - `d2/sa_nesting.rs`
+- [x] 3D Packing SA - `d3/sa_packing.rs`
+- [x] `Strategy::SimulatedAnnealing` 지원
+
+> **구현 내용**:
+> - `SaConfig`: 온도, cooling rate, iterations 설정
+> - `PermutationSolution`: sequence + rotation encoding
+> - `SaRunner`: temperature-based acceptance, early stopping
+> - Fitness = placement_ratio * 100 + utilization * 10
 
 #### 3.7 Local Search / Hill Climbing (0.5주) ❌ 미구현
 - [ ] First-improvement 전략
@@ -345,6 +354,9 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | BRKGA Framework | `core/brkga.rs` | RandomKeyChromosome, BrkgaProblem, BrkgaRunner |
 | Nester2D (BRKGA) | `d2/brkga_nesting.rs` | BRKGA 기반 2D nesting |
 | Packer3D (BRKGA) | `d3/brkga_packing.rs` | BRKGA 기반 3D packing |
+| SA Framework | `core/sa.rs` | SaConfig, SaProblem, SaRunner |
+| Nester2D (SA) | `d2/sa_nesting.rs` | SA 기반 2D nesting |
+| Packer3D (SA) | `d3/sa_packing.rs` | SA 기반 3D packing |
 | FFI JSON API | `ffi/api.rs` | C ABI, JSON 요청/응답 |
 | NFP Convex | `d2/nfp.rs` | Minkowski sum 기반 NFP 계산 |
 | NFP Cache | `d2/nfp.rs` | Thread-safe 캐싱 시스템 |

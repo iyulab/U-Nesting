@@ -4,9 +4,11 @@ use crate::boundary::Boundary3D;
 use crate::brkga_packing::run_brkga_packing;
 use crate::ga_packing::run_ga_packing;
 use crate::geometry::Geometry3D;
+use crate::sa_packing::run_sa_packing;
 use u_nesting_core::brkga::BrkgaConfig;
 use u_nesting_core::ga::GaConfig;
 use u_nesting_core::geometry::{Boundary, Geometry};
+use u_nesting_core::sa::SaConfig;
 use u_nesting_core::solver::{Config, ProgressCallback, Solver, Strategy};
 use u_nesting_core::{Placement, Result, SolveResult};
 
@@ -194,6 +196,34 @@ impl Packer3D {
 
         Ok(result)
     }
+
+    /// Simulated Annealing based packing optimization.
+    ///
+    /// Uses neighborhood operators to explore solution space with temperature-based
+    /// acceptance probability.
+    fn simulated_annealing(
+        &self,
+        geometries: &[Geometry3D],
+        boundary: &Boundary3D,
+    ) -> Result<SolveResult<f64>> {
+        // Configure SA with reasonable defaults
+        let sa_config = SaConfig::default()
+            .with_initial_temp(100.0)
+            .with_final_temp(0.1)
+            .with_cooling_rate(0.95)
+            .with_iterations_per_temp(50)
+            .with_max_iterations(10000);
+
+        let result = run_sa_packing(
+            geometries,
+            boundary,
+            &self.config,
+            sa_config,
+            self.cancelled.clone(),
+        );
+
+        Ok(result)
+    }
 }
 
 impl Solver for Packer3D {
@@ -217,6 +247,7 @@ impl Solver for Packer3D {
             }
             Strategy::GeneticAlgorithm => self.genetic_algorithm(geometries, boundary),
             Strategy::Brkga => self.brkga(geometries, boundary),
+            Strategy::SimulatedAnnealing => self.simulated_annealing(geometries, boundary),
             _ => {
                 // Fall back to layer packing for unimplemented strategies
                 log::warn!(

@@ -7,9 +7,11 @@ use crate::geometry::Geometry2D;
 use crate::nfp::{
     compute_ifp, compute_nfp, find_bottom_left_placement, Nfp, NfpCache, PlacedGeometry,
 };
+use crate::sa_nesting::run_sa_nesting;
 use u_nesting_core::brkga::BrkgaConfig;
 use u_nesting_core::ga::GaConfig;
 use u_nesting_core::geometry::{Boundary, Geometry};
+use u_nesting_core::sa::SaConfig;
 use u_nesting_core::solver::{Config, ProgressCallback, Solver, Strategy};
 use u_nesting_core::{Placement, Result, SolveResult};
 
@@ -410,6 +412,34 @@ impl Nester2D {
 
         Ok(result)
     }
+
+    /// Simulated Annealing based nesting optimization.
+    ///
+    /// Uses neighborhood operators to explore solution space with temperature-based
+    /// acceptance probability.
+    fn simulated_annealing(
+        &self,
+        geometries: &[Geometry2D],
+        boundary: &Boundary2D,
+    ) -> Result<SolveResult<f64>> {
+        // Configure SA with reasonable defaults
+        let sa_config = SaConfig::default()
+            .with_initial_temp(100.0)
+            .with_final_temp(0.1)
+            .with_cooling_rate(0.95)
+            .with_iterations_per_temp(50)
+            .with_max_iterations(10000);
+
+        let result = run_sa_nesting(
+            geometries,
+            boundary,
+            &self.config,
+            sa_config,
+            self.cancelled.clone(),
+        );
+
+        Ok(result)
+    }
 }
 
 /// Computes the centroid of a polygon.
@@ -443,6 +473,7 @@ impl Solver for Nester2D {
             Strategy::NfpGuided => self.nfp_guided_blf(geometries, boundary),
             Strategy::GeneticAlgorithm => self.genetic_algorithm(geometries, boundary),
             Strategy::Brkga => self.brkga(geometries, boundary),
+            Strategy::SimulatedAnnealing => self.simulated_annealing(geometries, boundary),
             _ => {
                 // Fall back to NFP-guided BLF for other strategies
                 log::warn!(

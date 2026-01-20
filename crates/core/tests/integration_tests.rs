@@ -382,6 +382,7 @@ mod solve_result_tests {
             unplaced: vec![],
             computation_time_ms: 150,
             generations: Some(50),
+            iterations: None,
             best_fitness: Some(0.95),
             fitness_history: Some(vec![0.5, 0.7, 0.85, 0.95]),
             strategy: Some("BLF+GA".to_string()),

@@ -29,7 +29,10 @@ pub struct SolveResult<S> {
     /// Number of generations (for GA-based solvers).
     pub generations: Option<u32>,
 
-    /// Best fitness value achieved (for GA-based solvers).
+    /// Number of iterations (for SA-based solvers).
+    pub iterations: Option<u64>,
+
+    /// Best fitness value achieved (for GA/SA-based solvers).
     pub best_fitness: Option<f64>,
 
     /// Fitness history over generations (for analysis).
@@ -55,6 +58,7 @@ impl<S> SolveResult<S> {
             unplaced: Vec::new(),
             computation_time_ms: 0,
             generations: None,
+            iterations: None,
             best_fitness: None,
             fitness_history: None,
             strategy: None,

@@ -23,6 +23,7 @@ pub mod ga;
 pub mod geometry;
 pub mod placement;
 pub mod result;
+pub mod sa;
 pub mod solver;
 pub mod transform;
 
@@ -30,6 +31,10 @@ pub mod transform;
 pub use error::{Error, Result};
 pub use brkga::{BrkgaConfig, BrkgaProblem, BrkgaResult, BrkgaRunner, RandomKeyChromosome};
 pub use ga::{GaConfig, GaProblem, GaResult, GaRunner, Individual, PermutationChromosome};
+pub use sa::{
+    CoolingSchedule, NeighborhoodOperator, PermutationSolution, SaConfig, SaProblem, SaResult,
+    SaRunner, SaSolution,
+};
 pub use geometry::{
     Boundary, Boundary2DExt, Boundary3DExt, Geometry, Geometry2DExt, Geometry3DExt, GeometryId,
     Orientation3D, RotationConstraint,

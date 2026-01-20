@@ -8,7 +8,7 @@
 //! ## Features
 //!
 //! - Polygon geometry with holes support
-//! - Multiple placement strategies (BLF, NFP-guided, GA, BRKGA)
+//! - Multiple placement strategies (BLF, NFP-guided, GA, BRKGA, SA)
 //! - Convex hull and convexity detection
 //! - Configurable rotation and mirroring constraints
 
@@ -18,6 +18,7 @@ pub mod ga_nesting;
 pub mod geometry;
 pub mod nester;
 pub mod nfp;
+pub mod sa_nesting;
 
 // Re-exports
 pub use boundary::Boundary2D;
