@@ -2,8 +2,8 @@
 
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
-> **마지막 업데이트**: 2026-01
-> **현재 진행 단계**: Phase 1 완료, Phase 2 완료 (100%), Phase 3 완료 (100%)
+> **마지막 업데이트**: 2026-01-20
+> **현재 진행 단계**: Phase 1 완료, Phase 2 완료 (100%), Phase 3 완료 (100%), Phase 6.1 완료
 
 ---
 
@@ -298,17 +298,18 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 
 ---
 
-## Phase 6: Benchmark & Release (2-3주) ⏳ 대기
+## Phase 6: Benchmark & Release (2-3주) 🔄 진행 중
 
 ### 목표
 표준 벤치마크 검증 및 릴리스 준비
 
 ### 태스크
 
-#### 6.1 ESICUP Benchmark Suite (1주) ❌ 미구현
-- [ ] 데이터셋 파서 구현
-- [ ] Benchmark runner 구축
-- [ ] 결과 기록 시스템
+#### 6.1 ESICUP Benchmark Suite (1주) ✅ 완료
+- [x] 데이터셋 파서 구현 - `benchmark/src/parser.rs`
+- [x] Benchmark runner 구축 - `benchmark/src/runner.rs`
+- [x] 결과 기록 시스템 - `benchmark/src/result.rs`
+- [x] CLI 도구 구현 - `benchmark/src/main.rs` (bench-runner)
 
 **데이터셋** ([ESICUP](https://oscar-oliveira.github.io/2D-Cutting-and-Packing/pages/datset.htm)):
 - ALBANO, BLAZ1-3, DIGHE1-2
@@ -369,6 +370,10 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | NFP Cache | `d2/nfp.rs` | Thread-safe 캐싱 시스템 |
 | IFP | `d2/nfp.rs` | Inner-Fit Polygon 계산 |
 | IFP with Margin | `d2/nfp.rs` | Margin 적용 가능한 IFP 계산 |
+| ESICUP Parser | `benchmark/src/parser.rs` | ESICUP JSON 데이터셋 파서 |
+| Benchmark Runner | `benchmark/src/runner.rs` | 다중 전략 벤치마크 실행 |
+| Result Recording | `benchmark/src/result.rs` | JSON/CSV 결과 기록 |
+| Benchmark CLI | `benchmark/src/main.rs` | bench-runner CLI 도구 |
 
 ### 미구현 핵심 기능 ❌
 | 기능 | 우선순위 | 설명 |
@@ -392,13 +397,18 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 2. ~~**IFP Margin 적용** (Phase 2.3)~~ ✅ 완료
    - `compute_ifp_with_margin()` 함수 추가 완료
 
-3. **벤치마크 설정** (Phase 6.1)
-   - ESICUP 데이터셋으로 품질 측정
-   - 개선 효과 정량화
+3. ~~**벤치마크 설정** (Phase 6.1)~~ ✅ 완료
+   - ESICUP 데이터셋 파서 구현
+   - Benchmark runner 및 CLI 도구 구현
+   - JSON/CSV 결과 기록 시스템 구현
 
 4. **병렬 처리** (Phase 4)
    - rayon 기반 NFP/GA 병렬화
    - Spatial indexing 통합
+
+5. **3D 벤치마크** (Phase 6.2)
+   - Martello et al. (2000) 데이터셋
+   - BPPLIB 1D 인스턴스
 
 ---
 

@@ -1,0 +1,44 @@
+[package]
+name = "u-nesting-benchmark"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Benchmark suite for U-Nesting using ESICUP datasets"
+keywords = ["benchmark", "nesting", "esicup"]
+categories = ["development-tools::profiling"]
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+u-nesting-core = { workspace = true, features = ["serde"] }
+u-nesting-d2 = { workspace = true, features = ["serde"] }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# HTTP client for downloading datasets
+ureq = { version = "2.9", features = ["json"] }
+
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+
+# Timing
+instant = "0.1"
+
+# CSV output
+csv = "1.3"
+
+# Progress display
+indicatif = "0.17"
+
+[dev-dependencies]
+criterion = { workspace = true }
+tempfile = "3.10"
+
+[[bin]]
+name = "bench-runner"
+path = "src/main.rs"
