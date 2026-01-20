@@ -1,6 +1,7 @@
 //! Genetic Algorithm framework for optimization.
 
 use rand::prelude::*;
+use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -123,6 +124,14 @@ pub trait GaProblem: Send + Sync {
     /// Evaluates the fitness of an individual.
     fn evaluate(&self, individual: &mut Self::Individual);
 
+    /// Evaluates multiple individuals in parallel.
+    /// Default implementation uses rayon for parallel evaluation.
+    fn evaluate_parallel(&self, individuals: &mut [Self::Individual]) {
+        individuals.par_iter_mut().for_each(|ind| {
+            self.evaluate(ind);
+        });
+    }
+
     /// Creates an initial population.
     fn initialize_population<R: Rng>(&self, size: usize, rng: &mut R) -> Vec<Self::Individual> {
         (0..size).map(|_| Self::Individual::random(rng)).collect()
@@ -209,10 +218,8 @@ where
             .problem
             .initialize_population(self.config.population_size, rng);
 
-        // Evaluate initial population
-        for ind in &mut population {
-            self.problem.evaluate(ind);
-        }
+        // Evaluate initial population in parallel
+        self.problem.evaluate_parallel(&mut population);
 
         // Sort by fitness (descending - higher is better)
         population.sort_by(|a, b| {
@@ -263,7 +270,12 @@ where
             }
 
             // Fill the rest with crossover and mutation
-            while new_population.len() < self.config.population_size {
+            // Generate all children first (sequential due to RNG dependency)
+            let mut children: Vec<P::Individual> = Vec::with_capacity(
+                self.config.population_size - new_population.len(),
+            );
+
+            while children.len() < self.config.population_size - new_population.len() {
                 // Selection (tournament)
                 let parent1 = self.tournament_select(&population, rng);
                 let parent2 = self.tournament_select(&population, rng);
@@ -280,10 +292,14 @@ where
                     child.mutate(rng);
                 }
 
-                // Evaluate
-                self.problem.evaluate(&mut child);
-                new_population.push(child);
+                children.push(child);
             }
+
+            // Evaluate all children in parallel
+            self.problem.evaluate_parallel(&mut children);
+
+            // Add evaluated children to new population
+            new_population.extend(children);
 
             // Sort new population
             new_population.sort_by(|a, b| {

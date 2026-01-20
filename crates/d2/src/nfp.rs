@@ -12,6 +12,7 @@ use geo::{ConvexHull, Coord, LineString};
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::float::single::SingleFloatOverlay;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::sync::{Arc, RwLock};
@@ -378,24 +379,34 @@ fn compute_nfp_general(stationary: &Geometry2D, rotated_orbiting: &[(f64, f64)])
         return compute_minkowski_sum_convex(&stat_hull, &reflected);
     }
 
-    // Compute pairwise Minkowski sums
-    let mut partial_nfps: Vec<Vec<(f64, f64)>> = Vec::new();
+    // Compute pairwise Minkowski sums in parallel
+    // Create all pairs for parallel processing
+    let pairs: Vec<_> = stat_triangles
+        .iter()
+        .flat_map(|stat_tri| {
+            orb_triangles
+                .iter()
+                .map(move |orb_tri| (stat_tri.clone(), orb_tri.clone()))
+        })
+        .collect();
 
-    for stat_tri in &stat_triangles {
-        for orb_tri in &orb_triangles {
+    let partial_nfps: Vec<Vec<(f64, f64)>> = pairs
+        .par_iter()
+        .flat_map(|(stat_tri, orb_tri)| {
             // Reflect orbiting triangle
             let reflected: Vec<(f64, f64)> = orb_tri.iter().map(|&(x, y)| (-x, -y)).collect();
 
             // Compute Minkowski sum of two convex polygons
             if let Ok(nfp) = compute_minkowski_sum_convex(stat_tri, &reflected) {
-                for polygon in nfp.polygons {
-                    if polygon.len() >= 3 {
-                        partial_nfps.push(polygon);
-                    }
-                }
+                nfp.polygons
+                    .into_iter()
+                    .filter(|polygon| polygon.len() >= 3)
+                    .collect::<Vec<_>>()
+            } else {
+                Vec::new()
             }
-        }
-    }
+        })
+        .collect();
 
     if partial_nfps.is_empty() {
         // Fall back to convex hull

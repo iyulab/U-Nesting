@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01-20
-> **현재 진행 단계**: Phase 1 완료, Phase 2 완료 (100%), Phase 3 완료 (100%), Phase 6.1 완료
+> **현재 진행 단계**: Phase 1 완료, Phase 2 완료 (100%), Phase 3 완료 (100%), Phase 4 완료 (부분), Phase 6.1 완료
 
 ---
 
@@ -14,7 +14,7 @@
 | **Phase 1** | 5-6주 | Geometry Core (2D/3D 기초) | ✅ 완료 |
 | **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | ✅ 완료 |
 | **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | ✅ 완료 |
-| **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | ⏳ 대기 |
+| **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | 🔄 진행 중 (50%) |
 | **Phase 5** | 3-4주 | FFI 및 통합 API | 🔄 진행 중 (60%) |
 | **Phase 6** | 2-3주 | 벤치마크 및 릴리스 준비 | ⏳ 대기 |
 
@@ -218,35 +218,60 @@ Genetic Algorithm 및 Simulated Annealing 최적화 엔진 구현
 
 ---
 
-## Phase 4: Performance Optimization (3-4주) ⏳ 대기
+## Phase 4: Performance Optimization (3-4주) 🔄 진행 중
 
 ### 목표
 병렬화 및 메모리 최적화를 통한 성능 향상
 
 ### 태스크
 
-#### 4.1 NFP 병렬 계산 (1주) ❌ 미구현
-- [ ] `rayon::par_iter()` 적용
-- [ ] Piece pair parallel computation
-- [ ] Work stealing 최적화
+#### 4.1 NFP 병렬 계산 (1주) ✅ 완료
+- [x] `rayon::par_iter()` 적용 - `d2/nfp.rs`
+- [x] Pairwise Minkowski sum parallel computation
+- [x] Work stealing 자동 최적화 (rayon 내장)
 
-#### 4.2 GA Population 병렬 평가 (0.5주) ❌ 미구현
-- [ ] Fitness 평가 병렬화
+> **구현 내용**:
+> - `compute_nfp_general()` 함수에서 triangulation 후 pairwise Minkowski sum을 병렬 계산
+> - `par_iter().flat_map()` 패턴으로 모든 삼각형 쌍 병렬 처리
+
+#### 4.2 GA Population 병렬 평가 (0.5주) ✅ 완료
+- [x] Fitness 평가 병렬화 - `core/ga.rs`
+- [x] `GaProblem::evaluate_parallel()` 기본 구현
+- [x] Initial population 병렬 평가
+- [x] Generation별 children 병렬 평가
 - [ ] Island Model GA 구현 (선택적)
 
-#### 4.3 Spatial Indexing (1주) ❌ 미구현
+> **구현 내용**:
+> - `GaProblem` trait에 `evaluate_parallel()` 메서드 추가 (기본값: rayon par_iter)
+> - `GaRunner::run_with_rng()`에서 population 평가를 배치로 병렬 처리
+
+#### 4.3 BRKGA Population 병렬 평가 (0.5주) ✅ 완료
+- [x] Fitness 평가 병렬화 - `core/brkga.rs`
+- [x] `BrkgaProblem::evaluate_parallel()` 기본 구현
+- [x] Initial population, mutants, children 병렬 평가
+
+#### 4.4 SA 병렬 재시작 (0.5주) ✅ 완료
+- [x] `SaRunner::run_parallel()` 메서드 추가 - `core/sa.rs`
+- [x] 여러 SA 인스턴스를 병렬로 실행하여 최적 결과 선택
+
+> **구현 내용**:
+> - `run_parallel(num_restarts)` 메서드: 지정된 수의 SA를 병렬 실행
+> - 각 실행은 독립적인 RNG 사용
+> - 가장 좋은 결과 반환
+
+#### 4.5 Spatial Indexing (1주) ❌ 미구현
 - [ ] `rstar` R*-tree 통합 (2D)
 - [ ] `parry3d` BVH 활용 (3D)
 - [ ] Broad-phase collision culling
 
 > **Note**: `rstar` 의존성은 추가됨, 실제 통합 필요
 
-#### 4.4 Memory Optimization (1주) ❌ 미구현
+#### 4.6 Memory Optimization (1주) ❌ 미구현
 - [ ] Arena allocation (`bumpalo`) for temporary polygons
 - [ ] Geometry instancing (shared vertex data)
 - [ ] Zero-copy deserialization (`rkyv`) 평가
 
-#### 4.5 SIMD Optimization (선택적, 0.5주) ❌ 미구현
+#### 4.7 SIMD Optimization (선택적, 0.5주) ❌ 미구현
 - [ ] `simba` 기반 벡터 연산
 - [ ] Batch point-in-polygon tests
 
@@ -374,6 +399,10 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | Benchmark Runner | `benchmark/src/runner.rs` | 다중 전략 벤치마크 실행 |
 | Result Recording | `benchmark/src/result.rs` | JSON/CSV 결과 기록 |
 | Benchmark CLI | `benchmark/src/main.rs` | bench-runner CLI 도구 |
+| NFP 병렬 계산 | `d2/nfp.rs` | rayon 기반 pairwise Minkowski sum 병렬화 |
+| GA 병렬 평가 | `core/ga.rs` | Population fitness 병렬 평가 |
+| BRKGA 병렬 평가 | `core/brkga.rs` | Population fitness 병렬 평가 |
+| SA 병렬 재시작 | `core/sa.rs` | 다중 SA 인스턴스 병렬 실행 |
 
 ### 미구현 핵심 기능 ❌
 | 기능 | 우선순위 | 설명 |
@@ -382,7 +411,8 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | ~~NFP-guided BLF~~ | ~~**높음**~~ | ~~NFP 기반 최적 배치점 탐색~~ ✅ 완료 |
 | ~~GA-based Nesting~~ | ~~**중간**~~ | ~~GA + BLF/NFP decoder~~ ✅ 완료 |
 | ~~Extreme Point (3D)~~ | ~~**중간**~~ | ~~EP heuristic for bin packing~~ ✅ 완료 |
-| 병렬 처리 | **중간** | rayon 기반 NFP/GA 병렬화 |
+| ~~병렬 처리~~ | ~~**중간**~~ | ~~rayon 기반 NFP/GA 병렬화~~ ✅ 완료 |
+| Spatial Indexing | **중간** | R*-tree/BVH 통합 |
 | Python Bindings | **낮음** | PyO3/maturin |
 
 ---
@@ -402,11 +432,14 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
    - Benchmark runner 및 CLI 도구 구현
    - JSON/CSV 결과 기록 시스템 구현
 
-4. **병렬 처리** (Phase 4)
-   - rayon 기반 NFP/GA 병렬화
-   - Spatial indexing 통합
+4. ~~**병렬 처리** (Phase 4)~~ ✅ 완료
+   - rayon 기반 NFP/GA/BRKGA/SA 병렬화 완료
+   - Spatial indexing 통합 (향후)
 
-5. **3D 벤치마크** (Phase 6.2)
+5. **Spatial Indexing** (Phase 4.5)
+   - R*-tree/BVH 기반 충돌 검사 최적화
+
+6. **3D 벤치마크** (Phase 6.2)
    - Martello et al. (2000) 데이터셋
    - BPPLIB 1D 인스턴스
 

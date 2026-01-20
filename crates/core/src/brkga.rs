@@ -15,6 +15,7 @@
 //! for combinatorial optimization. Journal of Heuristics, 17(5), 487-525.
 
 use rand::prelude::*;
+use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -233,6 +234,14 @@ pub trait BrkgaProblem: Send + Sync {
     /// Evaluates the fitness of a chromosome and updates its fitness value.
     fn evaluate(&self, chromosome: &mut RandomKeyChromosome);
 
+    /// Evaluates multiple chromosomes in parallel.
+    /// Default implementation uses rayon for parallel evaluation.
+    fn evaluate_parallel(&self, chromosomes: &mut [RandomKeyChromosome]) {
+        chromosomes.par_iter_mut().for_each(|c| {
+            self.evaluate(c);
+        });
+    }
+
     /// Called after each generation (for progress reporting).
     fn on_generation(
         &self,
@@ -306,10 +315,8 @@ impl<P: BrkgaProblem> BrkgaRunner<P> {
             .map(|_| RandomKeyChromosome::random(num_keys, rng))
             .collect();
 
-        // Evaluate initial population
-        for chromosome in &mut population {
-            self.problem.evaluate(chromosome);
-        }
+        // Evaluate initial population in parallel
+        self.problem.evaluate_parallel(&mut population);
 
         // Sort by fitness (descending - higher is better)
         population.sort_by(|a, b| {
@@ -360,31 +367,34 @@ impl<P: BrkgaProblem> BrkgaRunner<P> {
             }
 
             // 2. Generate mutants (completely random new individuals)
-            for _ in 0..mutant_count {
-                let mut mutant = RandomKeyChromosome::random(num_keys, rng);
-                self.problem.evaluate(&mut mutant);
-                new_population.push(mutant);
-            }
+            let mut mutants: Vec<RandomKeyChromosome> = (0..mutant_count)
+                .map(|_| RandomKeyChromosome::random(num_keys, rng))
+                .collect();
 
             // 3. Fill the rest with biased crossover
             let crossover_count = self.config.population_size - elite_count - mutant_count;
-            for _ in 0..crossover_count {
-                // Select one elite parent
-                let elite_idx = rng.gen_range(0..elite_count);
-                let elite_parent = &population[elite_idx];
+            let mut children: Vec<RandomKeyChromosome> = (0..crossover_count)
+                .map(|_| {
+                    // Select one elite parent
+                    let elite_idx = rng.gen_range(0..elite_count);
+                    let elite_parent = &population[elite_idx];
 
-                // Select one non-elite parent
-                let non_elite_idx = rng.gen_range(elite_count..population.len());
-                let non_elite_parent = &population[non_elite_idx];
+                    // Select one non-elite parent
+                    let non_elite_idx = rng.gen_range(elite_count..population.len());
+                    let non_elite_parent = &population[non_elite_idx];
 
-                // Biased crossover
-                let mut child =
-                    elite_parent.biased_crossover(non_elite_parent, self.config.elite_bias, rng);
+                    // Biased crossover
+                    elite_parent.biased_crossover(non_elite_parent, self.config.elite_bias, rng)
+                })
+                .collect();
 
-                // Evaluate
-                self.problem.evaluate(&mut child);
-                new_population.push(child);
-            }
+            // Evaluate all new individuals (mutants + children) in parallel
+            self.problem.evaluate_parallel(&mut mutants);
+            self.problem.evaluate_parallel(&mut children);
+
+            // Add to new population
+            new_population.extend(mutants);
+            new_population.extend(children);
 
             // Sort new population
             new_population.sort_by(|a, b| {
