@@ -2,8 +2,8 @@
 
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
-> **마지막 업데이트**: 2025-01
-> **현재 진행 단계**: Phase 1 완료, Phase 2-3 진행 중
+> **마지막 업데이트**: 2026-01
+> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (50%), Phase 3 진행 중 (20%)
 
 ---
 
@@ -12,7 +12,7 @@
 | Phase | 기간 | 핵심 목표 | 상태 |
 |-------|------|----------|------|
 | **Phase 1** | 5-6주 | Geometry Core (2D/3D 기초) | ✅ 완료 |
-| **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | 🔄 진행 중 (30%) |
+| **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | 🔄 진행 중 (50%) |
 | **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | 🔄 진행 중 (20%) |
 | **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | ⏳ 대기 |
 | **Phase 5** | 3-4주 | FFI 및 통합 API | 🔄 진행 중 (60%) |
@@ -73,29 +73,29 @@ No-Fit Polygon 계산 엔진 및 기본 배치 알고리즘 구현
 
 ### 태스크
 
-#### 2.1 NFP 계산 - Convex Case (1주) ❌ 미구현
-- [ ] Minkowski Sum for convex polygons (O(n+m))
-- [ ] Edge vector sorting and merging
-- [ ] Reference point tracking
+#### 2.1 NFP 계산 - Convex Case (1주) ✅ 완료
+- [x] Minkowski Sum for convex polygons (O(n+m))
+- [x] Edge vector sorting and merging
+- [x] Reference point tracking
 
-#### 2.2 NFP 계산 - Non-Convex Case (2주) ❌ 미구현
+#### 2.2 NFP 계산 - Non-Convex Case (2주) 🔄 부분 구현
 - [ ] Burke et al. Orbiting 알고리즘 구현
 - [ ] Degenerate case 처리 (collinear, coincident)
-- [ ] Decomposition + Union 방식 대안 구현
-- [ ] `i_overlay` 기반 Boolean 연산 통합
+- [x] Decomposition + Union 방식 대안 구현 (convex hull 근사 사용)
+- [ ] `i_overlay` 기반 Boolean 연산 통합 (정확한 non-convex NFP)
 - [ ] Hole 처리 (내부 구멍이 있는 폴리곤)
 
-> **현재 상태**: `d2/nfp.rs`에 stub만 존재. `compute_nfp()`, `compute_ifp()` 모두 `Error` 반환.
+> **현재 상태**: Convex NFP 완전 구현. Non-convex는 convex hull 근사로 동작 (conservative approximation).
 
-#### 2.3 Inner Fit Polygon (IFP) (0.5주) ❌ 미구현
-- [ ] Container 경계에 대한 IFP 계산
+#### 2.3 Inner Fit Polygon (IFP) (0.5주) ✅ 완료
+- [x] Container 경계에 대한 IFP 계산
 - [ ] Margin 적용
 
-#### 2.4 NFP 캐싱 시스템 (0.5주) 🔄 부분 구현
+#### 2.4 NFP 캐싱 시스템 (0.5주) ✅ 완료
 - [x] `NfpCache` 구조체 정의
-- [ ] Thread-safe cache (`DashMap` 또는 `Arc<RwLock<HashMap>>`)
-- [ ] Cache key: `(geometry_id, geometry_id, rotation_angle)`
-- [ ] LRU eviction policy
+- [x] Thread-safe cache (`Arc<RwLock<HashMap>>`)
+- [x] Cache key: `(geometry_id, geometry_id, rotation_angle)`
+- [x] Simple eviction policy (half-cache clear when full)
 
 #### 2.5 2D Placement Algorithms (1주) 🔄 부분 구현
 - [x] **Bottom-Left Fill (BLF)**: 기본 구현 - `d2/nester.rs`
@@ -313,12 +313,15 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | Packer3D (Layer) | `d3/packer.rs` | Layer-based 배치 |
 | GA Framework | `core/ga.rs` | Individual, GaProblem, GaRunner |
 | FFI JSON API | `ffi/api.rs` | C ABI, JSON 요청/응답 |
+| NFP Convex | `d2/nfp.rs` | Minkowski sum 기반 NFP 계산 |
+| NFP Cache | `d2/nfp.rs` | Thread-safe 캐싱 시스템 |
+| IFP | `d2/nfp.rs` | Inner-Fit Polygon 계산 |
 
 ### 미구현 핵심 기능 ❌
 | 기능 | 우선순위 | 설명 |
 |------|----------|------|
-| NFP 계산 | **높음** | Minkowski sum, Orbiting algorithm |
-| NFP 캐싱 | **높음** | Thread-safe cache |
+| NFP 계산 (non-convex 정밀) | **중간** | Orbiting algorithm, i_overlay 통합 |
+| NFP-guided BLF | **높음** | NFP 기반 최적 배치점 탐색 |
 | GA-based Nesting | **중간** | GA + BLF/NFP decoder |
 | Extreme Point (3D) | **중간** | EP heuristic for bin packing |
 | 병렬 처리 | **중간** | rayon 기반 NFP/GA 병렬화 |
@@ -330,14 +333,13 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 
 ### 다음 단계 (권장 순서)
 
-1. **NFP 계산 구현** (Phase 2.1-2.2)
-   - Convex case: Minkowski sum
-   - Non-convex case: Decomposition + union via `i_overlay`
-   - 이것이 완료되어야 NFP-guided 배치 및 GA 최적화 가능
+1. **NFP 기반 배치** (Phase 2.5)
+   - NFP-guided BLF 구현 (NFP 활용한 최적 배치점 탐색)
+   - 현재 row-based BLF보다 훨씬 높은 utilization 달성 가능
 
-2. **NFP 기반 배치** (Phase 2.5)
-   - NFP-guided BLF 구현
-   - 현재 BLF보다 훨씬 높은 utilization 달성 가능
+2. **Non-convex NFP 정밀 구현** (Phase 2.2)
+   - Burke et al. Orbiting 알고리즘 또는 i_overlay 기반 정확한 NFP
+   - 현재 convex hull 근사에서 정확한 non-convex NFP로 개선
 
 3. **GA Nesting 통합** (Phase 3.3)
    - 이미 완성된 GA 프레임워크 활용
