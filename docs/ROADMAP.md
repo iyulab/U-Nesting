@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01
-> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (70%), Phase 3 완료 (100%)
+> **현재 진행 단계**: Phase 1 완료, Phase 2 진행 중 (80%), Phase 3 완료 (100%)
 
 ---
 
@@ -12,7 +12,7 @@
 | Phase | 기간 | 핵심 목표 | 상태 |
 |-------|------|----------|------|
 | **Phase 1** | 5-6주 | Geometry Core (2D/3D 기초) | ✅ 완료 |
-| **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | 🔄 진행 중 (70%) |
+| **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | 🔄 진행 중 (80%) |
 | **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | ✅ 완료 |
 | **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | ⏳ 대기 |
 | **Phase 5** | 3-4주 | FFI 및 통합 API | 🔄 진행 중 (60%) |
@@ -110,14 +110,19 @@ No-Fit Polygon 계산 엔진 및 기본 배치 알고리즘 구현
 - [ ] **Deepest Bottom-Left Fill (DBLF)**: 개선된 BLF
 - [ ] **Touching Perimeter**: 접촉 최대화
 
-#### 2.6 3D Placement Algorithms (1주) 🔄 부분 구현
+#### 2.6 3D Placement Algorithms (1주) ✅ 완료
 - [x] **Layer Packing**: 기본 구현 - `d3/packer.rs`
   - Layer/row-based placement
   - Mass constraint 지원
   - Margin/spacing 지원
-- [ ] **Extreme Point Heuristic**: EP 생성 및 관리
-- [ ] **DBLF-3D**: 3D 확장
-- [ ] GJK/EPA 기반 collision detection (`parry3d`)
+- [x] **Extreme Point Heuristic**: EP 생성 및 관리 - `d3/extreme_point.rs`
+  - ExtremePointSet 데이터 구조
+  - 배치된 박스로부터 새로운 EP 생성
+  - Residual space 계산
+  - Bottom-left-back 우선순위 기반 EP 선택
+  - `Strategy::ExtremePoint` 지원
+- [ ] **DBLF-3D**: 3D 확장 (선택적)
+- [ ] GJK/EPA 기반 collision detection (`parry3d`) (선택적)
 
 ### Benchmark 추가
 - [x] `d2/benches/nfp_bench.rs` - 벤치마크 파일 존재 (NFP 구현 후 활성화 필요)
@@ -357,6 +362,7 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | SA Framework | `core/sa.rs` | SaConfig, SaProblem, SaRunner |
 | Nester2D (SA) | `d2/sa_nesting.rs` | SA 기반 2D nesting |
 | Packer3D (SA) | `d3/sa_packing.rs` | SA 기반 3D packing |
+| Packer3D (EP) | `d3/extreme_point.rs` | Extreme Point heuristic 3D packing |
 | FFI JSON API | `ffi/api.rs` | C ABI, JSON 요청/응답 |
 | NFP Convex | `d2/nfp.rs` | Minkowski sum 기반 NFP 계산 |
 | NFP Cache | `d2/nfp.rs` | Thread-safe 캐싱 시스템 |
@@ -368,7 +374,7 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | NFP 계산 (non-convex 정밀) | **중간** | Orbiting algorithm, i_overlay 통합 |
 | ~~NFP-guided BLF~~ | ~~**높음**~~ | ~~NFP 기반 최적 배치점 탐색~~ ✅ 완료 |
 | ~~GA-based Nesting~~ | ~~**중간**~~ | ~~GA + BLF/NFP decoder~~ ✅ 완료 |
-| Extreme Point (3D) | **중간** | EP heuristic for bin packing |
+| ~~Extreme Point (3D)~~ | ~~**중간**~~ | ~~EP heuristic for bin packing~~ ✅ 완료 |
 | 병렬 처리 | **중간** | rayon 기반 NFP/GA 병렬화 |
 | Python Bindings | **낮음** | PyO3/maturin |
 
@@ -382,9 +388,9 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
    - Burke et al. Orbiting 알고리즘 또는 i_overlay 기반 정확한 NFP
    - 현재 convex hull 근사에서 정확한 non-convex NFP로 개선
 
-2. **Extreme Point 3D** (Phase 2.6)
-   - 3D bin packing을 위한 EP heuristic 구현
-   - Layer packing보다 높은 utilization 달성 가능
+2. **IFP Margin 적용** (Phase 2.3)
+   - Container 경계에서의 margin 처리 개선
+   - 2D nesting 품질 향상
 
 3. **벤치마크 설정** (Phase 6.1)
    - ESICUP 데이터셋으로 품질 측정

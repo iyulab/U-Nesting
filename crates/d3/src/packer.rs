@@ -2,6 +2,7 @@
 
 use crate::boundary::Boundary3D;
 use crate::brkga_packing::run_brkga_packing;
+use crate::extreme_point::run_ep_packing;
 use crate::ga_packing::run_ga_packing;
 use crate::geometry::Geometry3D;
 use crate::sa_packing::run_sa_packing;
@@ -224,6 +225,68 @@ impl Packer3D {
 
         Ok(result)
     }
+
+    /// Extreme Point heuristic-based packing.
+    ///
+    /// Places boxes at extreme points (positions touching at least two surfaces).
+    /// More efficient than layer-based packing for many scenarios.
+    fn extreme_point(
+        &self,
+        geometries: &[Geometry3D],
+        boundary: &Boundary3D,
+    ) -> Result<SolveResult<f64>> {
+        let start = Instant::now();
+
+        let (ep_placements, utilization) = run_ep_packing(
+            geometries,
+            boundary,
+            self.config.margin,
+            self.config.spacing,
+            boundary.max_mass(),
+        );
+
+        // Convert EP placements to Placement structs
+        let mut placements = Vec::new();
+        for (id, instance, position, _orientation) in ep_placements {
+            let placement = Placement::new_3d(
+                id,
+                instance,
+                position.x,
+                position.y,
+                position.z,
+                0.0, // rotation_x
+                0.0, // rotation_y
+                0.0, // rotation_z (orientation handled internally)
+            );
+            placements.push(placement);
+        }
+
+        // Collect unplaced items
+        let mut placed_ids: std::collections::HashSet<(String, usize)> =
+            std::collections::HashSet::new();
+        for p in &placements {
+            placed_ids.insert((p.geometry_id.clone(), p.instance));
+        }
+
+        let mut unplaced = Vec::new();
+        for geom in geometries {
+            for instance in 0..geom.quantity() {
+                if !placed_ids.contains(&(geom.id().clone(), instance)) {
+                    unplaced.push(geom.id().clone());
+                }
+            }
+        }
+
+        let mut result = SolveResult::new();
+        result.placements = placements;
+        result.boundaries_used = 1;
+        result.utilization = utilization;
+        result.unplaced = unplaced;
+        result.computation_time_ms = start.elapsed().as_millis() as u64;
+        result.strategy = Some("ExtremePoint".to_string());
+
+        Ok(result)
+    }
 }
 
 impl Solver for Packer3D {
@@ -242,9 +305,8 @@ impl Solver for Packer3D {
         self.cancelled.store(false, Ordering::Relaxed);
 
         match self.config.strategy {
-            Strategy::ExtremePoint | Strategy::BottomLeftFill => {
-                self.layer_packing(geometries, boundary)
-            }
+            Strategy::BottomLeftFill => self.layer_packing(geometries, boundary),
+            Strategy::ExtremePoint => self.extreme_point(geometries, boundary),
             Strategy::GeneticAlgorithm => self.genetic_algorithm(geometries, boundary),
             Strategy::Brkga => self.brkga(geometries, boundary),
             Strategy::SimulatedAnnealing => self.simulated_annealing(geometries, boundary),
@@ -420,5 +482,79 @@ mod tests {
         // All 4 boxes should be placed
         assert_eq!(result.placements.len(), 4);
         assert!(result.unplaced.is_empty());
+    }
+
+    #[test]
+    fn test_ep_strategy_basic() {
+        let geometries = vec![
+            Geometry3D::new("B1", 20.0, 20.0, 20.0).with_quantity(2),
+            Geometry3D::new("B2", 15.0, 15.0, 15.0).with_quantity(2),
+        ];
+
+        let boundary = Boundary3D::new(100.0, 80.0, 50.0);
+        let config = Config::default().with_strategy(Strategy::ExtremePoint);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // EP should place items and achieve positive utilization
+        assert!(result.utilization > 0.0);
+        assert!(!result.placements.is_empty());
+        assert_eq!(result.strategy, Some("ExtremePoint".to_string()));
+    }
+
+    #[test]
+    fn test_ep_strategy_all_placed() {
+        // Small number of boxes that should all fit
+        let geometries = vec![Geometry3D::new("B1", 10.0, 10.0, 10.0).with_quantity(4)];
+
+        let boundary = Boundary3D::new(100.0, 100.0, 100.0);
+        let config = Config::default().with_strategy(Strategy::ExtremePoint);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // All 4 boxes should be placed
+        assert_eq!(result.placements.len(), 4);
+        assert!(result.unplaced.is_empty());
+    }
+
+    #[test]
+    fn test_ep_strategy_with_margin() {
+        let geometries = vec![Geometry3D::new("B1", 20.0, 20.0, 20.0).with_quantity(4)];
+
+        let boundary = Boundary3D::new(100.0, 100.0, 100.0);
+        let config = Config::default()
+            .with_strategy(Strategy::ExtremePoint)
+            .with_margin(5.0);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // Verify placements start at margin
+        for p in &result.placements {
+            assert!(p.position[0] >= 4.9);
+            assert!(p.position[1] >= 4.9);
+            assert!(p.position[2] >= 4.9);
+        }
+    }
+
+    #[test]
+    fn test_ep_strategy_with_orientations() {
+        use crate::geometry::OrientationConstraint;
+
+        // Long box that benefits from rotation
+        let geometries = vec![Geometry3D::new("B1", 80.0, 10.0, 10.0)
+            .with_quantity(2)
+            .with_orientation(OrientationConstraint::Any)];
+
+        let boundary = Boundary3D::new(100.0, 100.0, 100.0);
+        let config = Config::default().with_strategy(Strategy::ExtremePoint);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // EP should find a way to place both boxes
+        assert_eq!(result.placements.len(), 2);
     }
 }
