@@ -1,8 +1,8 @@
 //! Integration tests for u-nesting-d2.
 
 use u_nesting_d2::{
-    Boundary, Boundary2D, Boundary2DExt, Config, Geometry, Geometry2D, Geometry2DExt, Nester2D,
-    Solver, Strategy, Transform2D, AABB2D,
+    Boundary, Boundary2D, Config, Geometry, Geometry2D, Geometry2DExt, Nester2D, Solver,
+    Transform2D, AABB2D,
 };
 
 mod geometry_tests {

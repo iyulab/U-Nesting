@@ -214,11 +214,11 @@ impl Geometry2D {
 
     /// Calculates the perimeter of the polygon.
     fn calculate_perimeter(&self) -> f64 {
-        use geo::EuclideanLength;
+        use geo::{Euclidean, Length};
         let poly = self.to_geo_polygon();
-        let mut perim = poly.exterior().euclidean_length();
+        let mut perim = poly.exterior().length::<Euclidean>();
         for hole in poly.interiors() {
-            perim += hole.euclidean_length();
+            perim += hole.length::<Euclidean>();
         }
         perim
     }

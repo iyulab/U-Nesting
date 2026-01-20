@@ -240,8 +240,8 @@ impl Boundary2DExt for Boundary2D {
         } else {
             // For non-rectangular boundaries, use buffer operation
             // For now, approximate by subtracting perimeter * margin
-            use geo::EuclideanLength;
-            let perim = self.to_geo_polygon().exterior().euclidean_length();
+            use geo::{Euclidean, Length};
+            let perim = self.to_geo_polygon().exterior().length::<Euclidean>();
             (self.calculate_area() - perim * margin).max(0.0)
         }
     }
