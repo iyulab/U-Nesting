@@ -1,0 +1,33 @@
+[package]
+name = "u-nesting-d3"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "3D bin packing algorithms for U-Nesting spatial optimization engine"
+keywords = ["bin-packing", "3d", "optimization", "geometry"]
+categories = ["algorithms", "mathematics"]
+
+[dependencies]
+u-nesting-core.workspace = true
+parry3d.workspace = true
+nalgebra.workspace = true
+serde = { workspace = true, optional = true }
+thiserror.workspace = true
+rayon.workspace = true
+rand.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+approx.workspace = true
+criterion.workspace = true
+
+[features]
+default = []
+serde = ["dep:serde", "u-nesting-core/serde", "nalgebra/serde-serialize"]
+
+[[bench]]
+name = "packer_bench"
+harness = false

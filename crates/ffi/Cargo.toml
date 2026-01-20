@@ -1,0 +1,25 @@
+[package]
+name = "u-nesting-ffi"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "C FFI interface for U-Nesting spatial optimization engine"
+keywords = ["ffi", "nesting", "bin-packing"]
+categories = ["api-bindings"]
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+u-nesting-core = { workspace = true, features = ["serde"] }
+u-nesting-d2 = { workspace = true, features = ["serde"] }
+u-nesting-d3 = { workspace = true, features = ["serde"] }
+serde.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+log.workspace = true
+
+[build-dependencies]
+cbindgen = "0.27"

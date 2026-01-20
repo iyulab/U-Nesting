@@ -1,0 +1,37 @@
+[package]
+name = "u-nesting-d2"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "2D nesting algorithms for U-Nesting spatial optimization engine"
+keywords = ["nesting", "polygon", "2d", "nfp", "optimization"]
+categories = ["algorithms", "mathematics"]
+
+[dependencies]
+u-nesting-core.workspace = true
+geo.workspace = true
+geo-types.workspace = true
+i_overlay.workspace = true
+parry2d.workspace = true
+nalgebra.workspace = true
+rstar.workspace = true
+serde = { workspace = true, optional = true }
+thiserror.workspace = true
+rayon.workspace = true
+rand.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+approx.workspace = true
+criterion.workspace = true
+
+[features]
+default = []
+serde = ["dep:serde", "u-nesting-core/serde", "geo/use-serde", "nalgebra/serde-serialize"]
+
+[[bench]]
+name = "nfp_bench"
+harness = false

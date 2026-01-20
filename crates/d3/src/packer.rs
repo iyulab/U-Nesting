@@ -1,0 +1,242 @@
+//! 3D bin packing solver.
+
+use crate::boundary::Boundary3D;
+use crate::geometry::Geometry3D;
+use u_nesting_core::geometry::{Boundary, Geometry};
+use u_nesting_core::solver::{Config, ProgressCallback, Solver};
+use u_nesting_core::{Placement, Result, SolveResult};
+
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::time::Instant;
+
+/// 3D bin packing solver.
+pub struct Packer3D {
+    config: Config,
+    cancelled: Arc<AtomicBool>,
+}
+
+impl Packer3D {
+    /// Creates a new packer with the given configuration.
+    pub fn new(config: Config) -> Self {
+        Self {
+            config,
+            cancelled: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    /// Creates a packer with default configuration.
+    pub fn default_config() -> Self {
+        Self::new(Config::default())
+    }
+
+    /// Simple layer-based packing algorithm.
+    fn layer_packing(
+        &self,
+        geometries: &[Geometry3D],
+        boundary: &Boundary3D,
+    ) -> Result<SolveResult<f64>> {
+        let start = Instant::now();
+        let mut result = SolveResult::new();
+        let mut placements = Vec::new();
+
+        let margin = self.config.margin;
+        let spacing = self.config.spacing;
+
+        let bound_max_x = boundary.width() - margin;
+        let bound_max_y = boundary.depth() - margin;
+        let bound_max_z = boundary.height() - margin;
+
+        // Simple layer-based placement
+        let mut current_x = margin;
+        let mut current_y = margin;
+        let mut current_z = margin;
+        let mut row_depth = 0.0_f64;
+        let mut layer_height = 0.0_f64;
+
+        let mut total_placed_volume = 0.0;
+        let mut total_placed_mass = 0.0;
+
+        for geom in geometries {
+            geom.validate()?;
+
+            for instance in 0..geom.quantity() {
+                if self.cancelled.load(Ordering::Relaxed) {
+                    result.computation_time_ms = start.elapsed().as_millis() as u64;
+                    return Ok(result);
+                }
+
+                // Use first allowed orientation (could optimize later)
+                let dims = geom.dimensions_for_orientation(0);
+                let g_width = dims.x;
+                let g_depth = dims.y;
+                let g_height = dims.z;
+
+                // Check mass constraint
+                if let (Some(max_mass), Some(item_mass)) = (boundary.max_mass(), geom.mass()) {
+                    if total_placed_mass + item_mass > max_mass {
+                        result.unplaced.push(geom.id().clone());
+                        continue;
+                    }
+                }
+
+                // Try to fit in current row
+                if current_x + g_width > bound_max_x {
+                    // Move to next row in current layer
+                    current_x = margin;
+                    current_y += row_depth + spacing;
+                    row_depth = 0.0;
+                }
+
+                // Check if fits in current layer (y direction)
+                if current_y + g_depth > bound_max_y {
+                    // Move to next layer
+                    current_x = margin;
+                    current_y = margin;
+                    current_z += layer_height + spacing;
+                    row_depth = 0.0;
+                    layer_height = 0.0;
+                }
+
+                // Check if fits in container height
+                if current_z + g_height > bound_max_z {
+                    result.unplaced.push(geom.id().clone());
+                    continue;
+                }
+
+                // Place the item
+                let placement = Placement::new_3d(
+                    geom.id().clone(),
+                    instance,
+                    current_x,
+                    current_y,
+                    current_z,
+                    0.0,
+                    0.0,
+                    0.0, // No rotation for simple placement
+                );
+
+                placements.push(placement);
+                total_placed_volume += geom.measure();
+                if let Some(mass) = geom.mass() {
+                    total_placed_mass += mass;
+                }
+
+                // Update position for next item
+                current_x += g_width + spacing;
+                row_depth = row_depth.max(g_depth);
+                layer_height = layer_height.max(g_height);
+            }
+        }
+
+        result.placements = placements;
+        result.boundaries_used = 1;
+        result.utilization = total_placed_volume / boundary.measure();
+        result.computation_time_ms = start.elapsed().as_millis() as u64;
+
+        Ok(result)
+    }
+}
+
+impl Solver for Packer3D {
+    type Geometry = Geometry3D;
+    type Boundary = Boundary3D;
+    type Scalar = f64;
+
+    fn solve(
+        &self,
+        geometries: &[Self::Geometry],
+        boundary: &Self::Boundary,
+    ) -> Result<SolveResult<f64>> {
+        boundary.validate()?;
+
+        // Reset cancellation flag
+        self.cancelled.store(false, Ordering::Relaxed);
+
+        match self.config.strategy {
+            u_nesting_core::Strategy::ExtremePoint | u_nesting_core::Strategy::BottomLeftFill => {
+                self.layer_packing(geometries, boundary)
+            }
+            _ => {
+                // Fall back to layer packing for unimplemented strategies
+                log::warn!(
+                    "Strategy {:?} not yet implemented, using layer packing",
+                    self.config.strategy
+                );
+                self.layer_packing(geometries, boundary)
+            }
+        }
+    }
+
+    fn solve_with_progress(
+        &self,
+        geometries: &[Self::Geometry],
+        boundary: &Self::Boundary,
+        _callback: ProgressCallback,
+    ) -> Result<SolveResult<f64>> {
+        // TODO: Implement progress reporting
+        self.solve(geometries, boundary)
+    }
+
+    fn cancel(&self) {
+        self.cancelled.store(true, Ordering::Relaxed);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simple_packing() {
+        let geometries = vec![
+            Geometry3D::new("B1", 20.0, 20.0, 20.0).with_quantity(3),
+            Geometry3D::new("B2", 15.0, 15.0, 15.0).with_quantity(2),
+        ];
+
+        let boundary = Boundary3D::new(100.0, 80.0, 50.0);
+        let packer = Packer3D::default_config();
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        assert!(result.utilization > 0.0);
+        assert!(result.placements.len() <= 5);
+    }
+
+    #[test]
+    fn test_mass_constraint() {
+        let geometries = vec![Geometry3D::new("B1", 20.0, 20.0, 20.0)
+            .with_quantity(10)
+            .with_mass(100.0)];
+
+        let boundary = Boundary3D::new(100.0, 80.0, 50.0).with_max_mass(350.0);
+
+        let packer = Packer3D::default_config();
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // Should only place 3 boxes (300 mass) due to 350 mass limit
+        assert!(result.placements.len() <= 3);
+    }
+
+    #[test]
+    fn test_placement_within_bounds() {
+        let geometries = vec![Geometry3D::new("B1", 10.0, 10.0, 10.0).with_quantity(4)];
+
+        let boundary = Boundary3D::new(50.0, 50.0, 50.0);
+        let config = Config::default().with_margin(5.0).with_spacing(2.0);
+        let packer = Packer3D::new(config);
+
+        let result = packer.solve(&geometries, &boundary).unwrap();
+
+        // All boxes should be placed
+        assert_eq!(result.placements.len(), 4);
+        assert!(result.unplaced.is_empty());
+
+        // Verify placements are within bounds (with margin)
+        for p in &result.placements {
+            assert!(p.position[0] >= 5.0);
+            assert!(p.position[1] >= 5.0);
+            assert!(p.position[2] >= 5.0);
+        }
+    }
+}

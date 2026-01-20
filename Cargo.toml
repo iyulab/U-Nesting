@@ -1,0 +1,71 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/d2",
+    "crates/d3",
+    "crates/ffi",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["iyulab"]
+license = "MIT"
+repository = "https://github.com/iyulab/U-Nesting"
+description = "Domain-agnostic 2D/3D spatial optimization engine"
+keywords = ["nesting", "bin-packing", "optimization", "geometry", "2d", "3d"]
+categories = ["algorithms", "mathematics", "science"]
+rust-version = "1.75"
+
+[workspace.dependencies]
+# Geometry
+geo = "0.29"
+geo-types = "0.7"
+i_overlay = "1.9"
+parry2d = "0.17"
+parry3d = "0.17"
+nalgebra = "0.33"
+rstar = "0.12"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Parallelism
+rayon = "1.10"
+
+# Random
+rand = "0.8"
+
+# FFI
+libc = "0.2"
+
+# Logging
+log = "0.4"
+tracing = "0.1"
+
+# Testing
+proptest = "1.5"
+approx = "0.5"
+criterion = "0.5"
+
+# Internal crates
+u-nesting-core = { path = "crates/core" }
+u-nesting-d2 = { path = "crates/d2" }
+u-nesting-d3 = { path = "crates/d3" }
+u-nesting-ffi = { path = "crates/ffi" }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.bench]
+lto = true
+codegen-units = 1

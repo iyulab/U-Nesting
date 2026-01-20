@@ -1,0 +1,47 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.exe
+
+# Generated files
+crates/ffi/include/
+
+# Benchmarks
+*.json
+!benches/**/*.json
+
+# Coverage
+lcov.info
+*.profraw
+*.profdata
+
+# Documentation build
+/doc/
+
+# Local configuration
+.env
+.env.local
+
+# Local
+nul
+CLAUDE.md
+.serena/
