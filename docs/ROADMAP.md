@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01-21
-> **현재 진행 단계**: Phase 1 완료, Phase 2 완료 (100%), Phase 3 완료 (100%), Phase 4 완료 (75%), Phase 5.3 완료, Phase 6.1 완료
+> **현재 진행 단계**: Phase 1 완료, Phase 2 완료 (100%), Phase 3 완료 (100%), Phase 4 완료 (75%), Phase 5.3 완료, Phase 6.1 완료, Phase 6.2 완료
 
 ---
 
@@ -16,7 +16,7 @@
 | **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | ✅ 완료 |
 | **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | 🔄 진행 중 (75%) |
 | **Phase 5** | 3-4주 | FFI 및 통합 API | 🔄 진행 중 (70%) |
-| **Phase 6** | 2-3주 | 벤치마크 및 릴리스 준비 | 🔄 진행 중 (50%) |
+| **Phase 6** | 2-3주 | 벤치마크 및 릴리스 준비 | 🔄 진행 중 (65%) |
 
 **총 예상 기간: 22-28주**
 
@@ -351,9 +351,12 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 - FU, JAKOBS1-2, MARQUES
 - POLY1-5, SHAPES, SHIRTS, SWIM, TROUSERS
 
-#### 6.2 3D Benchmark (0.5주) ❌ 미구현
-- [ ] Martello et al. (2000) 데이터셋
-- [ ] BPPLIB 1D 인스턴스 (검증용)
+#### 6.2 3D Benchmark (0.5주) ✅ 완료
+- [x] Martello-Pisinger-Vigo (MPV) 인스턴스 생성기 - `benchmark/src/dataset3d.rs`
+- [x] 9개 인스턴스 클래스 (MPV1-5, BW6-8, Custom)
+- [x] 3D Benchmark runner - `benchmark/src/runner3d.rs`
+- [x] BenchmarkConfig3D, BenchmarkRunner3D, BenchmarkSummary3D 구현
+- [ ] BPPLIB 1D 인스턴스 (검증용) - 1D only이므로 우선순위 낮음
 
 #### 6.3 결과 분석 및 리포트 (0.5주) ❌ 미구현
 - [ ] 기존 솔버(SVGnest, libnest2d) 대비 비교
@@ -418,6 +421,9 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 | GA Progress Callback | `core/ga.rs` | GaProgress 구조체, run_with_progress() 메서드 |
 | BRKGA Progress Callback | `core/brkga.rs` | BrkgaProgress 구조체, run_with_progress() 메서드 |
 | ProgressInfo Builder | `core/solver.rs` | Builder pattern 메서드로 확장된 ProgressInfo |
+| MPV Instance Generator | `benchmark/src/dataset3d.rs` | 3D 벤치마크 인스턴스 생성기 (MPV1-5, BW6-8) |
+| 3D Benchmark Runner | `benchmark/src/runner3d.rs` | 3D 벤치마크 실행기 |
+| 3D Dataset Types | `benchmark/src/dataset3d.rs` | Dataset3D, Item3D, InstanceClass 타입 |
 
 ### 미구현 핵심 기능 ❌
 | 기능 | 우선순위 | 설명 |
@@ -455,9 +461,9 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
    - AABB 기반 3D 공간 인덱스 구현
    - 향후 solver에 통합하여 broad-phase collision culling 적용 예정
 
-6. **3D 벤치마크** (Phase 6.2)
-   - Martello et al. (2000) 데이터셋
-   - BPPLIB 1D 인스턴스
+6. ~~**3D 벤치마크** (Phase 6.2)~~ ✅ 완료
+   - MPV 인스턴스 생성기 구현
+   - 3D 벤치마크 러너 구현
 
 7. **Memory Optimization** (Phase 4.6)
    - Arena allocation
