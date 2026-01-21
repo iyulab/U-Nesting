@@ -86,6 +86,7 @@ impl DatasetParser {
         Ok(Dataset {
             name: raw.name,
             items: items?,
+            strip_width: raw.strip_width,
             strip_height: raw.strip_height,
             best_known: None,
         })
@@ -120,6 +121,8 @@ impl DatasetParser {
 struct RawDataset {
     name: String,
     items: Vec<RawItem>,
+    #[serde(default)]
+    strip_width: Option<f64>,
     strip_height: f64,
 }
 

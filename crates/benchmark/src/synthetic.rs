@@ -49,6 +49,7 @@ impl SyntheticGenerator {
         Dataset {
             name: "synthetic_convex".to_string(),
             items,
+            strip_width: None,
             strip_height,
             best_known: None,
         }
@@ -81,6 +82,7 @@ impl SyntheticGenerator {
         Dataset {
             name: "synthetic_concave".to_string(),
             items,
+            strip_width: None,
             strip_height,
             best_known: None,
         }
@@ -113,6 +115,7 @@ impl SyntheticGenerator {
         Dataset {
             name: "synthetic_with_holes".to_string(),
             items,
+            strip_width: None,
             strip_height,
             best_known: None,
         }
@@ -149,6 +152,7 @@ impl SyntheticGenerator {
         Dataset {
             name: "synthetic_extreme_aspect".to_string(),
             items,
+            strip_width: None,
             strip_height,
             best_known: None,
         }
@@ -174,6 +178,7 @@ impl SyntheticGenerator {
         Dataset {
             name: "synthetic_tiny".to_string(),
             items,
+            strip_width: None,
             strip_height,
             best_known: None,
         }
@@ -209,6 +214,7 @@ impl SyntheticGenerator {
         Dataset {
             name: "synthetic_large".to_string(),
             items,
+            strip_width: None,
             strip_height,
             best_known: None,
         }
@@ -247,6 +253,7 @@ impl SyntheticGenerator {
         Dataset {
             name: "synthetic_near_collinear".to_string(),
             items,
+            strip_width: None,
             strip_height,
             best_known: None,
         }
@@ -274,6 +281,7 @@ impl SyntheticGenerator {
         Dataset {
             name: "synthetic_self_touching".to_string(),
             items,
+            strip_width: None,
             strip_height,
             best_known: None,
         }
@@ -311,6 +319,7 @@ impl SyntheticGenerator {
         Dataset {
             name: format!("synthetic_jigsaw_{}x{}", grid_size, grid_size),
             items,
+            strip_width: None,
             strip_height: total_size,
             best_known: Some(total_size), // Perfect packing should fit in a square
         }

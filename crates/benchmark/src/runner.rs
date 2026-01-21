@@ -121,9 +121,10 @@ impl BenchmarkRunner {
         let expanded = dataset.expand_items();
         let geometries = self.convert_to_geometries(&expanded);
 
-        // Use a large initial width for strip packing
-        // We'll measure the actual used width
-        let initial_width = self.estimate_initial_width(&geometries, dataset.strip_height);
+        // Use provided strip_width or estimate if not given
+        let initial_width = dataset
+            .strip_width
+            .unwrap_or_else(|| self.estimate_initial_width(&geometries, dataset.strip_height));
         let boundary = Boundary2D::rectangle(initial_width, dataset.strip_height);
 
         for strategy in &self.config.strategies {

@@ -28,6 +28,9 @@ pub struct Dataset {
     pub name: String,
     /// Items to be placed
     pub items: Vec<Item>,
+    /// Strip width (optional, if None will be estimated)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strip_width: Option<f64>,
     /// Strip height (container height for strip packing)
     pub strip_height: f64,
     /// Best known solution (optional)
