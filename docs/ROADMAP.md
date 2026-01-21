@@ -17,8 +17,9 @@
 | **Phase 4** | 3-4주 | 성능 최적화 및 병렬화 | ✅ 완료 |
 | **Phase 5** | 3-4주 | FFI 및 통합 API | ✅ 완료 (98%) |
 | **Phase 6** | 2-3주 | 벤치마크 및 릴리스 준비 | 🔄 릴리스 대기 (95%) |
+| **Phase 7** | 5-6주 | 배포 확장 및 문서화 | ⬜ 대기 |
 
-**총 예상 기간: 22-28주**
+**총 예상 기간: 27-34주**
 
 ---
 
@@ -404,6 +405,221 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 - [x] crates.io 배포 준비 - `cargo publish --dry-run` 검증 완료 (core)
 - [ ] crates.io 실제 배포 (순서: core → d2 → d3 → ffi)
 - [ ] GitHub Release 태그 생성 (v0.1.0)
+
+---
+
+## Phase 7: 배포 확장 및 문서화 (5-6주) ⬜ 대기
+
+### 목표
+다양한 언어 생태계 배포 및 종합 문서 제공
+
+---
+
+### Phase 7.1: FFI Callback Function Pointer 지원 (1주)
+
+#### 목표
+C/C# 소비자가 실시간 진행 상태를 받을 수 있는 콜백 메커니즘 제공
+
+#### 태스크
+
+##### 7.1.1 C ABI 콜백 타입 정의 (1일)
+- [ ] `typedef void (*UnestingProgressCallback)(const char* progress_json)`
+- [ ] `ProgressCallbackContext` opaque 핸들 정의
+
+##### 7.1.2 FFI API 확장 (2일) - 의존: 7.1.1
+- [ ] `unesting_solve_2d_with_progress(request, callback, context, result)`
+- [ ] `unesting_solve_3d_with_progress(request, callback, context, result)`
+- [ ] 콜백 호출 주기 설정 파라미터 추가
+
+##### 7.1.3 Thread-safe 콜백 래퍼 구현 (1일) - 의존: 7.1.2
+- [ ] unsafe extern "C" 콜백을 Rust closure로 변환
+- [ ] Panic guard 적용 (FFI boundary)
+
+##### 7.1.4 cbindgen 헤더 업데이트 (0.5일) - 의존: 7.1.3
+- [ ] `unesting.h`에 콜백 타입 및 함수 추가
+
+##### 7.1.5 C 사용 예제 작성 (0.5일) - 의존: 7.1.4
+- [ ] `examples/c/progress_callback.c`
+
+#### 산출물
+- `ffi/api.rs`: `_with_progress` 함수 추가
+- `ffi/callback.rs`: 콜백 타입 및 래퍼 (신규)
+- `include/unesting.h`: 콜백 타입 포함 헤더
+- `examples/c/`: C 예제 코드
+
+---
+
+### Phase 7.2: PyPI 배포 (1주)
+
+#### 목표
+`pip install u-nesting`으로 설치 가능한 Python 패키지 배포
+
+#### 태스크
+
+##### 7.2.1 maturin 빌드 검증 (0.5일)
+- [ ] Linux/macOS/Windows 크로스 컴파일 테스트
+- [ ] `maturin build --release` 검증
+
+##### 7.2.2 CI/CD 워크플로우 구성 (1일) - 의존: 7.2.1
+- [ ] `.github/workflows/python-publish.yml` 생성
+- [ ] maturin-action 설정 (manylinux, musllinux, macOS, Windows)
+- [ ] 태그 기반 자동 배포 트리거
+
+##### 7.2.3 PyPI 계정 및 토큰 설정 (0.5일)
+- [ ] PyPI API 토큰 발급
+- [ ] GitHub Secrets에 `PYPI_API_TOKEN` 등록
+
+##### 7.2.4 TestPyPI 배포 테스트 (1일) - 의존: 7.2.2, 7.2.3
+- [ ] TestPyPI에 먼저 배포
+- [ ] `pip install --index-url https://test.pypi.org/simple/ u-nesting` 검증
+
+##### 7.2.5 Python README 작성 (0.5일)
+- [ ] `crates/python/README.md` (PyPI 페이지용)
+- [ ] 설치 가이드, 빠른 시작, 예제 코드
+
+##### 7.2.6 PyPI 정식 배포 (0.5일) - 의존: 7.2.4, 7.2.5
+- [ ] 태그 생성 → 자동 배포
+- [ ] PyPI 페이지 확인
+
+#### 산출물
+- `.github/workflows/python-publish.yml`
+- `crates/python/README.md`
+- PyPI 패키지: `u-nesting`
+
+---
+
+### Phase 7.3: C# NuGet 패키지 (1.5주)
+
+#### 목표
+.NET 개발자를 위한 NuGet 패키지 배포
+
+#### 태스크
+
+##### 7.3.1 C# 프로젝트 구조 생성 (0.5일)
+- [ ] `bindings/csharp/UNesting/UNesting.csproj`
+- [ ] `bindings/csharp/UNesting.Tests/`
+
+##### 7.3.2 P/Invoke 래퍼 클래스 구현 (2일) - 의존: 7.3.1
+- [ ] `NativeLibrary.cs`: DLL import 선언
+- [ ] `Nester2D.cs`: 2D nesting API
+- [ ] `Packer3D.cs`: 3D packing API
+- [ ] `ProgressCallback.cs`: 콜백 델리게이트 (7.1 완료 후)
+
+##### 7.3.3 JSON 직렬화 모델 (1일) - 의존: 7.3.2
+- [ ] `Models/Request2D.cs`, `Response.cs` 등
+- [ ] `System.Text.Json` 또는 `Newtonsoft.Json` 사용
+
+##### 7.3.4 네이티브 라이브러리 번들링 (1일) - 의존: 7.3.2
+- [ ] `runtimes/win-x64/native/unesting.dll`
+- [ ] `runtimes/linux-x64/native/libunesting.so`
+- [ ] `runtimes/osx-x64/native/libunesting.dylib`
+- [ ] `.nuspec` 또는 `.csproj` 번들 설정
+
+##### 7.3.5 단위 테스트 (0.5일) - 의존: 7.3.3
+- [ ] xUnit 기반 테스트
+- [ ] 2D/3D 기본 시나리오 검증
+
+##### 7.3.6 NuGet 패키지 구성 (0.5일) - 의존: 7.3.4, 7.3.5
+- [ ] `UNesting.nuspec` 메타데이터
+- [ ] `dotnet pack` 검증
+
+##### 7.3.7 CI/CD 워크플로우 (0.5일) - 의존: 7.3.6
+- [ ] `.github/workflows/nuget-publish.yml`
+- [ ] 태그 기반 NuGet.org 배포
+
+##### 7.3.8 NuGet.org 배포 (0.5일) - 의존: 7.3.7
+- [ ] API 키 설정
+- [ ] 정식 배포
+
+#### 산출물
+- `bindings/csharp/UNesting/` C# 프로젝트
+- `bindings/csharp/UNesting.Tests/` 테스트 프로젝트
+- `.github/workflows/nuget-publish.yml`
+- NuGet 패키지: `UNesting`
+
+---
+
+### Phase 7.4: 사용자 가이드 및 알고리즘 해설 문서 (1.5주)
+
+#### 목표
+개발자와 연구자를 위한 종합 문서 제공
+
+#### 태스크
+
+##### 7.4.1 문서 사이트 구조 설계 (0.5일)
+- [ ] mdBook 또는 Docusaurus 선택
+- [ ] `docs/book/` 디렉토리 구조
+
+##### 7.4.2 시작 가이드 (1일) - 의존: 7.4.1
+- [ ] 설치 방법 (Rust/Python/C#/C)
+- [ ] 빠른 시작 예제
+- [ ] 기본 개념 설명
+
+##### 7.4.3 API 사용 가이드 (1일) - 의존: 7.4.2
+- [ ] 2D Nesting 가이드 (입력 형식, 옵션, 출력 해석)
+- [ ] 3D Packing 가이드
+- [ ] 전략 선택 가이드 (BLF vs NFP vs GA vs BRKGA vs SA)
+- [ ] 성능 튜닝 팁
+
+##### 7.4.4 알고리즘 해설 (2일)
+- [ ] NFP (No-Fit Polygon) 개념 및 계산 방법
+- [ ] Bottom-Left Fill 알고리즘
+- [ ] Genetic Algorithm 구조 및 파라미터
+- [ ] BRKGA 특징 및 장점
+- [ ] Simulated Annealing 쿨링 스케줄
+- [ ] Extreme Point Heuristic (3D)
+
+##### 7.4.5 아키텍처 문서 (0.5일)
+- [ ] 크레이트 구조 다이어그램
+- [ ] 핵심 trait/struct 관계
+- [ ] 데이터 흐름
+
+##### 7.4.6 기여 가이드 (0.5일)
+- [ ] `CONTRIBUTING.md`
+- [ ] 코드 스타일 가이드
+- [ ] PR 프로세스
+
+##### 7.4.7 문서 사이트 배포 (0.5일) - 의존: 7.4.1~7.4.6
+- [ ] GitHub Pages 설정
+- [ ] 자동 빌드 워크플로우
+
+#### 산출물
+- `docs/book/`: mdBook 소스
+- `docs/algorithms/`: 알고리즘 해설 (그림 포함)
+- `CONTRIBUTING.md`
+- GitHub Pages 문서 사이트
+
+---
+
+### Phase 7 요약
+
+| Sub-Phase | 기간 | 핵심 산출물 |
+|-----------|------|-------------|
+| 7.1 FFI Callback | 1주 | `_with_progress` API, C 예제 |
+| 7.2 PyPI 배포 | 1주 | PyPI 패키지, CI/CD |
+| 7.3 C# NuGet | 1.5주 | NuGet 패키지, P/Invoke 래퍼 |
+| 7.4 문서 확장 | 1.5주 | 문서 사이트, 알고리즘 해설 |
+
+**총 예상 기간: 5-6주**
+
+### 의존성 그래프
+
+```
+Phase 7.1 (FFI Callback)
+    ↓
+Phase 7.3 (C# NuGet) ← 콜백 델리게이트 지원 시 의존
+
+Phase 7.2 (PyPI) ← 독립적, 바로 시작 가능
+
+Phase 7.4 (문서) ← 독립적, 병렬 진행 가능
+```
+
+### 권장 실행 순서
+
+1. **Phase 7.2 (PyPI)** - 이미 Python 바인딩 완료, 즉시 배포 가능
+2. **Phase 7.1 (FFI Callback)** - C# 통합 전 선행 필요
+3. **Phase 7.3 (C# NuGet)** - FFI Callback 완료 후
+4. **Phase 7.4 (문서)** - 전 기간 병렬 진행 가능
 
 ---
 
