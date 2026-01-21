@@ -153,6 +153,8 @@ pub trait GaProblem: Send + Sync {
 pub struct GaProgress<F> {
     /// Current generation number.
     pub generation: u32,
+    /// Maximum generations configured.
+    pub max_generations: u32,
     /// Best fitness so far.
     pub best_fitness: F,
     /// Average fitness of current population.
@@ -208,8 +210,30 @@ where
         self.run_with_rng(&mut thread_rng())
     }
 
+    /// Runs the genetic algorithm with a progress callback.
+    pub fn run_with_progress<F>(&self, progress_callback: F) -> GaResult<P::Individual>
+    where
+        F: Fn(GaProgress<<P::Individual as Individual>::Fitness>),
+    {
+        self.run_with_rng_and_progress(&mut thread_rng(), Some(progress_callback))
+    }
+
     /// Runs the genetic algorithm with a specific RNG.
     pub fn run_with_rng<R: Rng>(&self, rng: &mut R) -> GaResult<P::Individual> {
+        self.run_with_rng_and_progress::<R, fn(GaProgress<<P::Individual as Individual>::Fitness>)>(
+            rng, None,
+        )
+    }
+
+    /// Runs the genetic algorithm with a specific RNG and optional progress callback.
+    pub fn run_with_rng_and_progress<R: Rng, F>(
+        &self,
+        rng: &mut R,
+        progress_callback: Option<F>,
+    ) -> GaResult<P::Individual>
+    where
+        F: Fn(GaProgress<<P::Individual as Individual>::Fitness>),
+    {
         let start = Instant::now();
         let mut history = Vec::new();
 
@@ -324,9 +348,27 @@ where
                 }
             }
 
-            // Callback
+            // Callback to GaProblem
             self.problem
                 .on_generation(generation, &best, &new_population);
+
+            // Progress callback
+            if let Some(ref callback) = progress_callback {
+                let avg_fitness = new_population
+                    .iter()
+                    .map(|ind| ind.fitness().into())
+                    .sum::<f64>()
+                    / new_population.len() as f64;
+
+                callback(GaProgress {
+                    generation,
+                    max_generations: self.config.max_generations,
+                    best_fitness: best.fitness(),
+                    avg_fitness,
+                    elapsed: start.elapsed(),
+                    running: true,
+                });
+            }
 
             population = new_population;
             generation += 1;
@@ -334,6 +376,24 @@ where
 
         // Final history entry
         history.push(best_fitness);
+
+        // Final progress callback indicating completion
+        if let Some(ref callback) = progress_callback {
+            let avg_fitness = population
+                .iter()
+                .map(|ind| ind.fitness().into())
+                .sum::<f64>()
+                / population.len().max(1) as f64;
+
+            callback(GaProgress {
+                generation,
+                max_generations: self.config.max_generations,
+                best_fitness: best.fitness(),
+                avg_fitness,
+                elapsed: start.elapsed(),
+                running: false,
+            });
+        }
 
         GaResult {
             best,

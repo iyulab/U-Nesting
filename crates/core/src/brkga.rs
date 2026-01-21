@@ -268,6 +268,23 @@ pub struct BrkgaResult {
     pub history: Vec<f64>,
 }
 
+/// Progress information during BRKGA execution.
+#[derive(Debug, Clone)]
+pub struct BrkgaProgress {
+    /// Current generation number.
+    pub generation: u32,
+    /// Maximum generations configured.
+    pub max_generations: u32,
+    /// Best fitness so far.
+    pub best_fitness: f64,
+    /// Average fitness of current population.
+    pub avg_fitness: f64,
+    /// Elapsed time since start.
+    pub elapsed: Duration,
+    /// Whether the algorithm is still running.
+    pub running: bool,
+}
+
 /// BRKGA runner.
 pub struct BrkgaRunner<P: BrkgaProblem> {
     config: BrkgaConfig,
@@ -304,8 +321,28 @@ impl<P: BrkgaProblem> BrkgaRunner<P> {
         self.run_with_rng(&mut thread_rng())
     }
 
+    /// Runs the BRKGA algorithm with a progress callback.
+    pub fn run_with_progress<F>(&self, progress_callback: F) -> BrkgaResult
+    where
+        F: Fn(BrkgaProgress),
+    {
+        self.run_with_rng_and_progress(&mut thread_rng(), Some(progress_callback))
+    }
+
     /// Runs the BRKGA algorithm with a specific RNG.
     pub fn run_with_rng<R: Rng>(&self, rng: &mut R) -> BrkgaResult {
+        self.run_with_rng_and_progress::<R, fn(BrkgaProgress)>(rng, None)
+    }
+
+    /// Runs the BRKGA algorithm with a specific RNG and optional progress callback.
+    pub fn run_with_rng_and_progress<R: Rng, F>(
+        &self,
+        rng: &mut R,
+        progress_callback: Option<F>,
+    ) -> BrkgaResult
+    where
+        F: Fn(BrkgaProgress),
+    {
         let start = Instant::now();
         let mut history = Vec::new();
         let num_keys = self.problem.num_keys();
@@ -420,9 +457,24 @@ impl<P: BrkgaProblem> BrkgaRunner<P> {
                 }
             }
 
-            // Callback
+            // Callback to BrkgaProblem
             self.problem
                 .on_generation(generation, &best, &new_population);
+
+            // Progress callback
+            if let Some(ref callback) = progress_callback {
+                let avg_fitness = new_population.iter().map(|c| c.fitness()).sum::<f64>()
+                    / new_population.len() as f64;
+
+                callback(BrkgaProgress {
+                    generation,
+                    max_generations: self.config.max_generations,
+                    best_fitness,
+                    avg_fitness,
+                    elapsed: start.elapsed(),
+                    running: true,
+                });
+            }
 
             population = new_population;
             generation += 1;
@@ -430,6 +482,21 @@ impl<P: BrkgaProblem> BrkgaRunner<P> {
 
         // Final history entry
         history.push(best_fitness);
+
+        // Final progress callback indicating completion
+        if let Some(ref callback) = progress_callback {
+            let avg_fitness =
+                population.iter().map(|c| c.fitness()).sum::<f64>() / population.len().max(1) as f64;
+
+            callback(BrkgaProgress {
+                generation,
+                max_generations: self.config.max_generations,
+                best_fitness,
+                avg_fitness,
+                elapsed: start.elapsed(),
+                running: false,
+            });
+        }
 
         BrkgaResult {
             best,

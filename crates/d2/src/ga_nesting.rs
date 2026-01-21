@@ -9,9 +9,9 @@ use crate::nfp::{compute_ifp, compute_nfp, find_bottom_left_placement, Nfp, Plac
 use rand::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use u_nesting_core::ga::{GaConfig, GaProblem, GaRunner, Individual};
+use u_nesting_core::ga::{GaConfig, GaProblem, GaProgress, GaRunner, Individual};
 use u_nesting_core::geometry::{Boundary, Geometry};
-use u_nesting_core::solver::Config;
+use u_nesting_core::solver::{Config, ProgressCallback, ProgressInfo};
 use u_nesting_core::{Placement, SolveResult};
 
 /// Nesting chromosome representing a placement order and rotations.
@@ -533,6 +533,94 @@ pub fn run_ga_nesting(
     });
 
     let ga_result = runner.run();
+
+    // Decode the best chromosome to get final placements
+    let problem = NestingProblem::new(
+        geometries.to_vec(),
+        boundary.clone(),
+        config.clone(),
+        Arc::new(AtomicBool::new(false)),
+    );
+
+    let (placements, utilization, _placed_count) = problem.decode(&ga_result.best);
+
+    // Build unplaced list
+    let mut unplaced = Vec::new();
+    let mut placed_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for p in &placements {
+        placed_ids.insert(p.geometry_id.clone());
+    }
+    for geom in geometries {
+        if !placed_ids.contains(geom.id()) {
+            unplaced.push(geom.id().clone());
+        }
+    }
+
+    let mut result = SolveResult::new();
+    result.placements = placements;
+    result.unplaced = unplaced;
+    result.boundaries_used = 1;
+    result.utilization = utilization;
+    result.computation_time_ms = ga_result.elapsed.as_millis() as u64;
+    result.generations = Some(ga_result.generations);
+    result.best_fitness = Some(ga_result.best.fitness());
+    result.fitness_history = Some(ga_result.history);
+    result.strategy = Some("GeneticAlgorithm".to_string());
+    result.cancelled = cancelled.load(Ordering::Relaxed);
+    result.target_reached = ga_result.target_reached;
+
+    result
+}
+
+/// Runs GA-based nesting optimization with progress callback.
+pub fn run_ga_nesting_with_progress(
+    geometries: &[Geometry2D],
+    boundary: &Boundary2D,
+    config: &Config,
+    ga_config: GaConfig,
+    cancelled: Arc<AtomicBool>,
+    progress_callback: ProgressCallback,
+) -> SolveResult<f64> {
+    let total_items = geometries.iter().map(|g| g.quantity()).sum::<usize>();
+
+    let problem = NestingProblem::new(
+        geometries.to_vec(),
+        boundary.clone(),
+        config.clone(),
+        cancelled.clone(),
+    );
+
+    let runner = GaRunner::new(ga_config.clone(), problem);
+
+    // Connect cancellation
+    let cancel_handle = runner.cancel_handle();
+    let cancelled_clone = cancelled.clone();
+    std::thread::spawn(move || {
+        while !cancelled_clone.load(Ordering::Relaxed) {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        cancel_handle.store(true, Ordering::Relaxed);
+    });
+
+    // Run GA with progress callback adapter
+    let max_generations = ga_config.max_generations;
+    let ga_result = runner.run_with_progress(move |ga_progress: GaProgress<f64>| {
+        let info = ProgressInfo::new()
+            .with_iteration(ga_progress.generation, max_generations)
+            .with_fitness(ga_progress.best_fitness)
+            .with_utilization(ga_progress.best_fitness) // fitness is utilization
+            .with_items(0, total_items) // we don't track placed count during GA
+            .with_elapsed(ga_progress.elapsed.as_millis() as u64)
+            .with_phase("Genetic Algorithm".to_string());
+
+        let info = if !ga_progress.running {
+            info.finished()
+        } else {
+            info
+        };
+
+        progress_callback(info);
+    });
 
     // Decode the best chromosome to get final placements
     let problem = NestingProblem::new(

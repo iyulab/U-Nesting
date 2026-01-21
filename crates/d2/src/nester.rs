@@ -2,7 +2,7 @@
 
 use crate::boundary::Boundary2D;
 use crate::brkga_nesting::run_brkga_nesting;
-use crate::ga_nesting::run_ga_nesting;
+use crate::ga_nesting::{run_ga_nesting, run_ga_nesting_with_progress};
 use crate::geometry::Geometry2D;
 use crate::nfp::{
     compute_ifp_with_margin, compute_nfp, find_bottom_left_placement, Nfp, NfpCache, PlacedGeometry,
@@ -485,10 +485,34 @@ impl Solver for Nester2D {
         &self,
         geometries: &[Self::Geometry],
         boundary: &Self::Boundary,
-        _callback: ProgressCallback,
+        callback: ProgressCallback,
     ) -> Result<SolveResult<f64>> {
-        // TODO: Implement progress reporting
-        self.solve(geometries, boundary)
+        // Reset cancellation flag
+        self.cancelled.store(false, Ordering::Relaxed);
+
+        match self.config.strategy {
+            Strategy::GeneticAlgorithm => {
+                let ga_config = GaConfig::default()
+                    .with_population_size(50)
+                    .with_max_generations(100)
+                    .with_crossover_rate(0.85)
+                    .with_mutation_rate(0.15);
+
+                let result = run_ga_nesting_with_progress(
+                    geometries,
+                    boundary,
+                    &self.config,
+                    ga_config,
+                    self.cancelled.clone(),
+                    callback,
+                );
+
+                Ok(result)
+            }
+            // For other strategies, fall back to solve without progress
+            // TODO: Add progress callback support for BRKGA and SA
+            _ => self.solve(geometries, boundary),
+        }
     }
 
     fn cancel(&self) {

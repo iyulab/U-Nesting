@@ -124,16 +124,89 @@ impl Config {
 pub type ProgressCallback = Box<dyn Fn(ProgressInfo) + Send + Sync>;
 
 /// Progress information during solving.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ProgressInfo {
-    /// Current generation (for GA).
-    pub generation: u32,
-    /// Current best utilization.
+    /// Current iteration/generation number.
+    pub iteration: u32,
+    /// Total expected iterations (0 if unknown).
+    pub total_iterations: u32,
+    /// Current best utilization (0.0 to 1.0).
     pub utilization: f64,
+    /// Current best fitness value.
+    pub best_fitness: f64,
+    /// Number of items placed.
+    pub items_placed: usize,
+    /// Total number of items.
+    pub total_items: usize,
     /// Elapsed time in milliseconds.
     pub elapsed_ms: u64,
+    /// Current phase/stage description.
+    pub phase: String,
     /// Whether the solver is still running.
     pub running: bool,
+}
+
+impl ProgressInfo {
+    /// Creates a new progress info with default values.
+    pub fn new() -> Self {
+        Self {
+            running: true,
+            ..Default::default()
+        }
+    }
+
+    /// Sets the iteration info.
+    pub fn with_iteration(mut self, current: u32, total: u32) -> Self {
+        self.iteration = current;
+        self.total_iterations = total;
+        self
+    }
+
+    /// Sets the utilization.
+    pub fn with_utilization(mut self, utilization: f64) -> Self {
+        self.utilization = utilization;
+        self
+    }
+
+    /// Sets the best fitness.
+    pub fn with_fitness(mut self, fitness: f64) -> Self {
+        self.best_fitness = fitness;
+        self
+    }
+
+    /// Sets the items placed info.
+    pub fn with_items(mut self, placed: usize, total: usize) -> Self {
+        self.items_placed = placed;
+        self.total_items = total;
+        self
+    }
+
+    /// Sets the elapsed time.
+    pub fn with_elapsed(mut self, elapsed_ms: u64) -> Self {
+        self.elapsed_ms = elapsed_ms;
+        self
+    }
+
+    /// Sets the phase description.
+    pub fn with_phase(mut self, phase: impl Into<String>) -> Self {
+        self.phase = phase.into();
+        self
+    }
+
+    /// Marks the solver as finished.
+    pub fn finished(mut self) -> Self {
+        self.running = false;
+        self
+    }
+
+    /// Calculates the progress percentage (0.0 to 1.0).
+    pub fn progress_percent(&self) -> f64 {
+        if self.total_iterations > 0 {
+            self.iteration as f64 / self.total_iterations as f64
+        } else {
+            0.0
+        }
+    }
 }
 
 /// Trait for nesting/packing solvers.
