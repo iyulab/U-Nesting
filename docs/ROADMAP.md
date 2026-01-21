@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01-21
-> **현재 진행 단계**: Phase 0.5 완료 (P1 결함 수정) - v0.1.0 릴리스 준비
+> **현재 진행 단계**: P1/P2 결함 수정 완료 - v0.1.0 릴리스 준비
 
 ---
 
@@ -301,8 +301,18 @@
 #### 0.5.2 개선 로드맵 업데이트 ✅
 **태스크**:
 - [x] P0/P1 결함을 Phase 6.5에 추가 (릴리스 전 수정) → **2건 모두 수정 완료**
-- [ ] P2 결함을 Phase 7에 추가
+- [x] P2 결함을 Phase 7에 추가 → **5건 모두 수정 완료 (2026-01-21)**
 - [ ] P3 결함을 Backlog에 추가
+
+**P2 결함 수정 내역** (2026-01-21):
+
+| ID | 카테고리 | 제목 | 수정 내용 |
+|----|----------|------|-----------|
+| progress-callback-noop | API | Progress callback 미동작 | BLF/NFP에 progress callback 구현, 테스트 추가 |
+| 3d-orientation-not-optimized | Quality | 3D 회전 최적화 없음 | 모든 허용 orientation 시도, 최적 선택 |
+| nfp-cache-not-implemented | Perf | NFP 캐시 미구현 | nfp_guided_blf에서 NfpCache 활용 |
+| ffi-no-unit-tests | Quality | FFI 유닛 테스트 없음 | 15개 FFI 테스트 추가 |
+| ga-framework-unused | API | GA Config 파라미터 미연동 | Config 파라미터 GA에 전달
 
 #### 0.5.3 회귀 테스트 추가 ✅
 **태스크**:
