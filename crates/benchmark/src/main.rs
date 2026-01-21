@@ -85,12 +85,34 @@ enum Commands {
 
     /// Download a dataset
     Download {
-        /// Dataset name
+        /// Dataset name (e.g., SHAPES, SHIRTS)
         dataset: String,
 
+        /// Instance name (e.g., shapes0, shapes1). If not specified, downloads all instances.
+        #[arg(short, long)]
+        instance: Option<String>,
+
         /// Output directory
-        #[arg(short, long, default_value = "datasets")]
+        #[arg(short, long, default_value = "datasets/2d/esicup")]
         output: PathBuf,
+    },
+
+    /// Download all ESICUP datasets
+    DownloadAll {
+        /// Output directory
+        #[arg(short, long, default_value = "datasets/2d/esicup")]
+        output: PathBuf,
+    },
+
+    /// Generate synthetic test datasets
+    GenerateSynthetic {
+        /// Output directory
+        #[arg(short, long, default_value = "datasets/2d/synthetic")]
+        output: PathBuf,
+
+        /// Random seed for reproducibility
+        #[arg(short, long, default_value = "42")]
+        seed: u64,
     },
 }
 
@@ -271,22 +293,79 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        Commands::Download { dataset, output } => {
-            let parser = DatasetParser::new();
-            let instance = dataset.to_lowercase();
+        Commands::Download { dataset, instance, output } => {
+            let manager = u_nesting_benchmark::DatasetManager::new(&output);
 
-            println!("Downloading {}/{}...", dataset, instance);
-            let ds = parser.download_and_parse(&dataset, &instance)?;
+            if let Some(inst) = instance {
+                // Download specific instance
+                println!("Downloading {}/{}...", dataset, inst);
+                let ds = manager.download(&dataset, &inst)?;
+
+                println!("Dataset saved to: {}", manager.get_cache_path(&inst).display());
+                println!("  Items: {}", ds.items.len());
+                println!("  Total pieces: {}", ds.expand_items().len());
+                println!("  Strip height: {}", ds.strip_height);
+            } else {
+                // Download all instances of the dataset
+                if let Some(info) = u_nesting_benchmark::DatasetManager::get_dataset_info(&dataset) {
+                    println!("Downloading all instances of {}...", dataset);
+                    for inst in info.instances {
+                        print!("  {} ... ", inst);
+                        match manager.download(&dataset, inst) {
+                            Ok(ds) => println!("OK ({} items)", ds.items.len()),
+                            Err(e) => println!("FAILED: {}", e),
+                        }
+                    }
+                } else {
+                    anyhow::bail!("Unknown dataset: {}", dataset);
+                }
+            }
+        }
+
+        Commands::DownloadAll { output } => {
+            let manager = u_nesting_benchmark::DatasetManager::new(&output);
+            println!("Downloading all ESICUP datasets to {}...", output.display());
+
+            let results = manager.download_all();
+            let mut success = 0;
+            let mut failed = 0;
+
+            for (dataset, instance, result) in results {
+                print!("  {}/{} ... ", dataset, instance);
+                match result {
+                    Ok(ds) => {
+                        println!("OK ({} items)", ds.items.len());
+                        success += 1;
+                    }
+                    Err(e) => {
+                        println!("FAILED: {}", e);
+                        failed += 1;
+                    }
+                }
+            }
+
+            println!("\nSummary: {} succeeded, {} failed", success, failed);
+        }
+
+        Commands::GenerateSynthetic { output, seed } => {
+            use u_nesting_benchmark::SyntheticDatasets;
 
             std::fs::create_dir_all(&output)?;
-            let file_path = output.join(format!("{}.json", instance));
-            let json = serde_json::to_string_pretty(&ds)?;
-            std::fs::write(&file_path, json)?;
+            println!("Generating synthetic datasets (seed={}) to {}...", seed, output.display());
 
-            println!("Dataset saved to: {}", file_path.display());
-            println!("  Items: {}", ds.items.len());
-            println!("  Total pieces: {}", ds.expand_items().len());
-            println!("  Strip height: {}", ds.strip_height);
+            let datasets = SyntheticDatasets::all(seed);
+            for ds in &datasets {
+                let file_path = output.join(format!("{}.json", ds.name));
+                let json = serde_json::to_string_pretty(&ds)?;
+                std::fs::write(&file_path, &json)?;
+                println!("  {} ... OK ({} items, {} pieces)",
+                    ds.name,
+                    ds.items.len(),
+                    ds.expand_items().len()
+                );
+            }
+
+            println!("\nGenerated {} synthetic datasets", datasets.len());
         }
     }
 

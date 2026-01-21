@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01-21
-> **현재 진행 단계**: v0.1.0 릴리스 준비 완료 - crates.io 배포 및 GitHub Release 대기 중
+> **현재 진행 단계**: Phase 0.1 완료 (데이터셋 확보) - Phase 0.2 대기
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Phase | 기간 | 핵심 목표 | 상태 |
 |-------|------|----------|------|
+| **Phase 0** | 2-3주 | 품질 검증 및 결함 도출 | 🔥 **최우선** |
 | **Phase 1** | 5-6주 | Geometry Core (2D/3D 기초) | ✅ 완료 |
 | **Phase 2** | 4-5주 | NFP 엔진 및 배치 알고리즘 | ✅ 완료 |
 | **Phase 3** | 5-6주 | 최적화 알고리즘 (GA/SA) | ✅ 완료 |
@@ -19,7 +20,286 @@
 | **Phase 6** | 2-3주 | 벤치마크 및 릴리스 준비 | 🔄 릴리스 대기 (95%) |
 | **Phase 7** | 5-6주 | 배포 확장 및 문서화 | ⬜ 대기 |
 
-**총 예상 기간: 27-34주**
+**총 예상 기간: 29-37주**
+
+---
+
+## Phase 0: 품질 검증 및 결함 도출 (2-3주) 🔥 최우선
+
+### 목표
+실제 벤치마크 데이터셋을 활용한 포괄적인 품질 검증 및 결함/개선사항 도출
+
+### 배경
+- v0.1.0 릴리스 전 실제 데이터셋 기반 성능 검증 필수
+- Dogfooding 원칙에 따른 자체 결함 발견 및 개선
+- 학계 표준 벤치마크 대비 품질 수준 파악
+
+---
+
+### Phase 0.1: 벤치마크 데이터셋 확보 (3일) ✅ 완료
+
+#### 2D Nesting 데이터셋
+
+##### 0.1.1 ESICUP 표준 데이터셋 ✅ 완료
+**소스**: [ESICUP/datasets](https://github.com/ESICUP/datasets)
+
+| 데이터셋 | 아이템 수 | 특성 | 우선순위 |
+|----------|----------|------|----------|
+| ALBANO | 24 | 볼록/비볼록 혼합 | **높음** |
+| BLAZ1-3 | 7-28 | 단순 폴리곤 | **높음** |
+| DAGLI | 30 | 산업용 패턴 | 중간 |
+| FU | 12 | 복잡한 형상 | **높음** |
+| JAKOBS1-2 | 25 | 클래식 벤치마크 | **높음** |
+| MAO | 20 | 다양한 크기 | 중간 |
+| MARQUES | 24 | 홀 포함 | **높음** |
+| SHAPES | 43 | 다양한 기하학 | **높음** |
+| SHIRTS | 99 | 대규모 산업용 | **높음** |
+| SWIM | 48 | 곡선 근사 | 중간 |
+| TROUSERS | 64 | 산업용 의류 패턴 | **높음** |
+
+**태스크**:
+- [x] ESICUP GitHub 데이터셋 일괄 다운로드 스크립트 작성 (`download.rs`, `DatasetManager`)
+- [x] `datasets/2d/esicup/` 디렉토리 구성
+- [x] 각 데이터셋의 best-known solution 값 수집 (`ESICUP_DATASETS` 상수)
+
+**다운로드 결과**: 13/16 성공 (ALBANO, BLAZ1, DAGLI, FU, JAKOBS1-2, MAO, MARQUES, SHAPES0-1, SHIRTS, SWIM, TROUSERS)
+
+##### 0.1.2 seanys 전처리 데이터셋 ⬜
+**소스**: [seanys/2D-Irregular-Packing-Algorithm](https://github.com/seanys/2D-Irregular-Packing-Algorithm)
+
+**태스크**:
+- [ ] CSV 형식 데이터셋 다운로드
+- [ ] CSV → JSON 변환기 구현 (`benchmark/src/csv_parser.rs`)
+- [ ] `datasets/2d/seanys/` 디렉토리 구성
+
+##### 0.1.3 Jigsaw Puzzle 인스턴스 ⬜
+**소스**: López-Camacho et al. (2013)
+
+| 세트 | 인스턴스 수 | 특성 |
+|------|------------|------|
+| JP1 | 540 | 볼록 도형, 100% 최적해 |
+| JP2 | 480 | 볼록/비볼록 혼합 |
+
+**태스크**:
+- [ ] JP1/JP2 데이터셋 확보 (웹 검색 또는 논문 부록)
+- [ ] 파서 구현 (`benchmark/src/jigsaw_parser.rs`)
+- [ ] `datasets/2d/jigsaw/` 디렉토리 구성
+
+##### 0.1.4 합성 테스트 데이터셋 생성 ✅ 완료
+**목적**: Edge case 및 스트레스 테스트용
+
+| 카테고리 | 설명 |
+|----------|------|
+| `convex_only` | 순수 볼록 폴리곤 (삼각형, 사각형, 오각형 등) |
+| `concave_complex` | 복잡한 비볼록 폴리곤 |
+| `with_holes` | 구멍이 있는 폴리곤 |
+| `extreme_aspect` | 극단적 종횡비 (매우 길거나 좁은) |
+| `tiny_items` | 매우 작은 아이템 (정밀도 테스트) |
+| `large_count` | 1000+ 아이템 (스케일 테스트) |
+| `near_collinear` | 거의 직선인 엣지 (수치 안정성) |
+| `self_touching` | 자기 접촉 폴리곤 |
+
+**태스크**:
+- [x] 합성 데이터 생성기 구현 (`benchmark/src/synthetic.rs`)
+- [x] 각 카테고리별 10-50개 인스턴스 생성
+- [x] `datasets/2d/synthetic/` 디렉토리 구성
+
+**생성 결과**: 8개 합성 데이터셋 (convex, concave, with_holes, extreme_aspect, tiny, large, near_collinear, jigsaw)
+
+#### 3D Bin Packing 데이터셋
+
+##### 0.1.5 MPV 인스턴스 (기존 구현 활용) ✅
+**상태**: `benchmark/src/dataset3d.rs`에 생성기 구현 완료
+
+- [ ] MPV1-5, BW6-8 인스턴스 생성 및 저장
+- [ ] `datasets/3d/mpv/` 디렉토리 구성
+
+##### 0.1.6 BPPLIB 데이터셋 ⬜
+**소스**: [BPPLIB](https://site.unibo.it/operations-research/en/research/bpplib-a-bin-packing-problem-library)
+
+**태스크**:
+- [ ] BPPLIB 3D 인스턴스 다운로드
+- [ ] 파서 구현 또는 확장
+- [ ] `datasets/3d/bpplib/` 디렉토리 구성
+
+##### 0.1.7 BED-BPP 실제 주문 데이터 ⬜
+**소스**: 학술 논문 (Alibaba Cloud 기반)
+
+**태스크**:
+- [ ] 공개 데이터셋 확보 가능 여부 조사
+- [ ] 가능시 파서 구현
+
+##### 0.1.8 합성 3D 테스트 데이터셋 ⬜
+
+| 카테고리 | 설명 |
+|----------|------|
+| `uniform_cubes` | 동일 크기 정육면체 |
+| `varied_boxes` | 다양한 크기 직육면체 |
+| `extreme_ratios` | 극단적 종횡비 (판재, 막대) |
+| `heavy_items` | 무게 제약 테스트 |
+| `orientation_restricted` | 회전 제한 아이템 |
+
+**태스크**:
+- [ ] 3D 합성 데이터 생성기 확장
+- [ ] `datasets/3d/synthetic/` 디렉토리 구성
+
+---
+
+### Phase 0.2: 테스트 시나리오 정의 (2일)
+
+#### 2D Nesting 시나리오
+
+| ID | 시나리오 | 목적 | 데이터셋 |
+|----|----------|------|----------|
+| 2D-S01 | **기본 기능 검증** | 모든 전략이 올바르게 동작하는지 확인 | SHAPES, BLAZ |
+| 2D-S02 | **볼록 폴리곤 최적화** | NFP 정확성 및 배치 품질 | convex_only |
+| 2D-S03 | **비볼록 폴리곤 처리** | Triangulation + NFP union 정확성 | FU, concave_complex |
+| 2D-S04 | **홀 처리** | 구멍 있는 폴리곤 처리 | MARQUES, with_holes |
+| 2D-S05 | **대규모 인스턴스** | 스케일 성능 및 메모리 | SHIRTS, large_count |
+| 2D-S06 | **회전 최적화** | 다중 회전 각도 효과 | JAKOBS, TROUSERS |
+| 2D-S07 | **수치 안정성** | Edge case 처리 | near_collinear, tiny_items |
+| 2D-S08 | **전략 비교** | BLF vs NFP vs GA vs BRKGA vs SA | 전체 ESICUP |
+| 2D-S09 | **100% 최적해 검증** | 알려진 최적해 달성 가능 여부 | JP1 (jigsaw) |
+| 2D-S10 | **시간 제약 성능** | 제한 시간 내 최대 품질 | ALBANO, DAGLI |
+
+#### 3D Bin Packing 시나리오
+
+| ID | 시나리오 | 목적 | 데이터셋 |
+|----|----------|------|----------|
+| 3D-S01 | **기본 기능 검증** | Layer/EP 전략 동작 확인 | MPV1-3 |
+| 3D-S02 | **다양한 크기 처리** | 크기 변동이 큰 아이템 | MPV4-5, varied_boxes |
+| 3D-S03 | **회전 최적화** | 6방향 회전 효과 | BW6-8 |
+| 3D-S04 | **무게 제약** | mass constraint 처리 | heavy_items |
+| 3D-S05 | **Extreme Point** | EP 전략 품질 | 전체 MPV |
+| 3D-S06 | **GA/BRKGA/SA 비교** | 최적화 전략 비교 | MPV1-5 |
+| 3D-S07 | **대규모 인스턴스** | 100+ 아이템 처리 | large_count_3d |
+
+#### 공통 시나리오
+
+| ID | 시나리오 | 목적 |
+|----|----------|------|
+| C-S01 | **FFI 통합 테스트** | JSON API 경계 조건 |
+| C-S02 | **취소 기능** | Cancellation token 동작 |
+| C-S03 | **진행 콜백** | Progress callback 정확성 |
+| C-S04 | **메모리 사용량** | 대규모 인스턴스 메모리 프로파일링 |
+| C-S05 | **병렬 성능** | 멀티스레드 스케일링 |
+
+---
+
+### Phase 0.3: 테스트 인프라 구축 (3일)
+
+#### 0.3.1 자동화 테스트 러너 확장 ⬜
+**태스크**:
+- [ ] 시나리오 기반 테스트 러너 (`benchmark/src/scenario_runner.rs`)
+- [ ] YAML/TOML 기반 시나리오 정의 파일
+- [ ] 병렬 테스트 실행 지원 (rayon)
+- [ ] 중간 결과 저장 및 재개 기능
+
+#### 0.3.2 결과 수집 및 분석 확장 ⬜
+**태스크**:
+- [ ] 상세 메트릭 수집
+  - Utilization (%)
+  - Strip length / Volume used
+  - Computation time (ms)
+  - Memory peak (MB)
+  - NFP cache hit rate
+  - GA/SA convergence history
+- [ ] Best-known 대비 gap 계산
+- [ ] 통계 분석 (평균, 표준편차, 최소/최대)
+
+#### 0.3.3 리포트 생성 확장 ⬜
+**태스크**:
+- [ ] Markdown 리포트 템플릿
+- [ ] 전략별/데이터셋별 히트맵
+- [ ] 수렴 그래프 (GA/SA)
+- [ ] 이슈 자동 생성 템플릿
+
+#### 0.3.4 시각화 도구 ⬜
+**태스크**:
+- [ ] SVG 결과 출력 (`benchmark/src/visualizer.rs`)
+- [ ] 배치 결과 이미지 생성
+- [ ] 3D 결과 OBJ/STL 출력
+
+---
+
+### Phase 0.4: 테스트 실행 및 결함 도출 (1주)
+
+#### 0.4.1 전체 시나리오 실행 ⬜
+**태스크**:
+- [ ] 2D 시나리오 (2D-S01 ~ 2D-S10) 실행
+- [ ] 3D 시나리오 (3D-S01 ~ 3D-S07) 실행
+- [ ] 공통 시나리오 (C-S01 ~ C-S05) 실행
+- [ ] 결과 JSON/CSV 저장
+
+#### 0.4.2 결과 분석 ⬜
+**분석 항목**:
+- [ ] 전략별 Utilization 평균/편차
+- [ ] Best-known 대비 gap 분석
+- [ ] 실패 케이스 분류
+- [ ] 성능 병목 식별
+- [ ] 메모리 누수 검사
+
+#### 0.4.3 결함/개선사항 도출 ⬜
+**도출 카테고리**:
+
+| 카테고리 | 설명 | 이슈 라벨 |
+|----------|------|----------|
+| **버그** | 잘못된 결과, 크래시, 무한 루프 | `bug` |
+| **정확성** | NFP 계산 오류, 충돌 감지 실패 | `accuracy` |
+| **성능** | 느린 속도, 높은 메모리 사용 | `performance` |
+| **품질** | 낮은 utilization, 최적해 미달 | `quality` |
+| **API** | 불편한 인터페이스, 누락된 기능 | `api` |
+| **문서** | 부족한 설명, 예제 필요 | `docs` |
+
+**태스크**:
+- [ ] 각 결함/개선사항별 GitHub 이슈 초안 작성
+- [ ] `claudedocs/issues/` 디렉토리에 저장
+- [ ] 우선순위 및 심각도 분류
+
+---
+
+### Phase 0.5: 개선 계획 수립 (2일)
+
+#### 0.5.1 결함 우선순위 결정 ⬜
+**기준**:
+- **P0 (Critical)**: 크래시, 데이터 손상, 보안 문제
+- **P1 (High)**: 잘못된 결과, 심각한 성능 저하
+- **P2 (Medium)**: 품질 저하, 사용성 문제
+- **P3 (Low)**: 마이너 개선, 코드 정리
+
+#### 0.5.2 개선 로드맵 업데이트 ⬜
+**태스크**:
+- [ ] P0/P1 결함을 Phase 6.5에 추가 (릴리스 전 수정)
+- [ ] P2 결함을 Phase 7에 추가
+- [ ] P3 결함을 Backlog에 추가
+
+#### 0.5.3 회귀 테스트 추가 ⬜
+**태스크**:
+- [ ] 발견된 버그에 대한 단위 테스트 추가
+- [ ] CI에 벤치마크 회귀 테스트 통합
+
+---
+
+### Phase 0 산출물
+
+| 산출물 | 위치 |
+|--------|------|
+| 데이터셋 | `datasets/2d/`, `datasets/3d/` |
+| 시나리오 정의 | `benchmark/scenarios/` |
+| 테스트 결과 | `benchmark/results/` |
+| 분석 리포트 | `benchmark/reports/` |
+| 이슈 초안 | `claudedocs/issues/` |
+| 시각화 결과 | `benchmark/visualizations/` |
+
+### Phase 0 완료 기준
+
+- [ ] 최소 15개 ESICUP 데이터셋 테스트 완료
+- [ ] 모든 전략(BLF, NFP, GA, BRKGA, SA)에 대한 벤치마크
+- [ ] Best-known 대비 gap < 15% (GA/BRKGA/SA 전략)
+- [ ] 모든 발견된 P0/P1 결함 이슈 생성
+- [ ] 품질 검증 리포트 작성 완료
+
+---
 
 ---
 

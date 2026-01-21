@@ -2,6 +2,8 @@
 //!
 //! This crate provides:
 //! - ESICUP dataset parser for 2D irregular nesting problems
+//! - Dataset download and management
+//! - Synthetic dataset generation for edge case testing
 //! - MPV (Martello-Pisinger-Vigo) instance generator for 3D bin packing
 //! - Benchmark runner with multiple strategies
 //! - Result recording and comparison
@@ -10,10 +12,12 @@
 mod analyzer;
 mod dataset;
 mod dataset3d;
+mod download;
 mod parser;
 mod result;
 mod runner;
 mod runner3d;
+mod synthetic;
 
 // Analysis exports
 pub use analyzer::{
@@ -23,9 +27,11 @@ pub use analyzer::{
 
 // 2D exports
 pub use dataset::{Dataset, DatasetInfo, Item, Shape};
+pub use download::{DatasetInfo as DownloadDatasetInfo, DatasetManager, DownloadError, ESICUP_DATASETS};
 pub use parser::DatasetParser;
 pub use result::{BenchmarkResult, RunResult, StrategySummary};
 pub use runner::{BenchmarkConfig, BenchmarkRunner};
+pub use synthetic::{SyntheticDatasets, SyntheticGenerator};
 
 // 3D exports
 pub use dataset3d::{Dataset3D, Dataset3DInfo, InstanceClass, InstanceGenerator, Item3D};

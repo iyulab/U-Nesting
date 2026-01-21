@@ -26,9 +26,14 @@ Thumbs.db
 crates/ffi/include/
 
 # Benchmarks
+datasets/
+benchmark/results/
+benchmark/reports/
+benchmark/visualizations/
 *.json
 !benches/**/*.json
 !docs/json-schema/*.json
+!benchmark/scenarios/*.json
 
 # Coverage
 lcov.info
@@ -47,3 +52,4 @@ nul
 CLAUDE.md
 .serena/
 claudedocs/
+dev/
