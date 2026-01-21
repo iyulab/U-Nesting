@@ -176,20 +176,131 @@ pub fn compute_ifp_with_margin(
         ));
     }
 
-    // The IFP is computed by:
-    // 1. Reflect the geometry about its reference point (negate all coordinates)
-    // 2. Compute Minkowski sum of boundary and reflected geometry
-    // This gives us the locus of valid placement positions
+    // The IFP (Inner-Fit Polygon) is computed using Minkowski EROSION:
+    // IFP = boundary ⊖ geometry = ∩_{g ∈ geometry} (boundary - g)
+    //
+    // This is the set of all positions p where placing the geometry at p
+    // keeps ALL vertices inside the boundary.
+    //
+    // NOTE: This is different from Minkowski SUM (⊕) which gives UNION not intersection!
+    // Previous implementation incorrectly used Minkowski sum.
+    compute_minkowski_erosion(&effective_boundary, &rotated_geom)
+}
 
-    let reflected_geom: Vec<(f64, f64)> = rotated_geom.iter().map(|&(x, y)| (-x, -y)).collect();
-
-    // Check if both are convex for fast path
-    if is_polygon_convex(&effective_boundary) && is_polygon_convex(&reflected_geom) {
-        compute_minkowski_sum_convex(&effective_boundary, &reflected_geom)
-    } else {
-        // For non-convex cases, use general approach
-        compute_minkowski_sum_general(&effective_boundary, &reflected_geom)
+/// Computes Minkowski erosion of boundary by geometry: B ⊖ G = ∩_{g ∈ G} (B - g)
+///
+/// This gives all positions where placing geometry keeps it entirely inside boundary.
+/// For a rectangular boundary and convex geometry, this shrinks the boundary
+/// by the geometry's extent in each direction.
+fn compute_minkowski_erosion(boundary: &[(f64, f64)], geometry: &[(f64, f64)]) -> Result<Nfp> {
+    if boundary.len() < 3 || geometry.len() < 3 {
+        return Err(Error::InvalidGeometry(
+            "Both boundary and geometry must have at least 3 vertices".into(),
+        ));
     }
+
+    // Fast path for rectangular boundary (common case)
+    let (b_min_x, b_min_y, b_max_x, b_max_y) = bounding_box(boundary);
+    let is_rect = boundary.len() == 4
+        && boundary.iter().all(|&(x, y)| {
+            ((x - b_min_x).abs() < 1e-10 || (x - b_max_x).abs() < 1e-10)
+                && ((y - b_min_y).abs() < 1e-10 || (y - b_max_y).abs() < 1e-10)
+        });
+
+    // Get geometry bounding box (AABB of the geometry in its current orientation)
+    let (g_min_x, g_min_y, g_max_x, g_max_y) = bounding_box(geometry);
+
+    if is_rect {
+        // For rectangular boundary: shrink by geometry extents
+        // If geometry reference is at origin and vertices span [g_min, g_max],
+        // then placement p is valid iff:
+        //   p + g_min_x >= b_min_x  =>  p_x >= b_min_x - g_min_x
+        //   p + g_max_x <= b_max_x  =>  p_x <= b_max_x - g_max_x
+        //   p + g_min_y >= b_min_y  =>  p_y >= b_min_y - g_min_y
+        //   p + g_max_y <= b_max_y  =>  p_y <= b_max_y - g_max_y
+        let ifp_min_x = b_min_x - g_min_x;
+        let ifp_max_x = b_max_x - g_max_x;
+        let ifp_min_y = b_min_y - g_min_y;
+        let ifp_max_y = b_max_y - g_max_y;
+
+        // Check if IFP is valid (non-empty)
+        if ifp_min_x > ifp_max_x + 1e-10 || ifp_min_y > ifp_max_y + 1e-10 {
+            return Err(Error::InvalidGeometry(
+                "Geometry too large to fit in boundary".into(),
+            ));
+        }
+
+        // Clamp to ensure valid rectangle
+        let ifp_min_x = ifp_min_x.min(ifp_max_x);
+        let ifp_min_y = ifp_min_y.min(ifp_max_y);
+
+        return Ok(Nfp::from_polygon(vec![
+            (ifp_min_x, ifp_min_y),
+            (ifp_max_x, ifp_min_y),
+            (ifp_max_x, ifp_max_y),
+            (ifp_min_x, ifp_max_y),
+        ]));
+    }
+
+    // General case: intersect translated boundaries
+    // IFP = ∩_{g ∈ G} (B - g)
+    // For each geometry vertex g, translate boundary by -g, then intersect all
+    compute_minkowski_erosion_general(boundary, geometry)
+}
+
+/// General Minkowski erosion using polygon intersection via i_overlay
+fn compute_minkowski_erosion_general(
+    boundary: &[(f64, f64)],
+    geometry: &[(f64, f64)],
+) -> Result<Nfp> {
+    if geometry.is_empty() {
+        return Ok(Nfp::from_polygon(boundary.to_vec()));
+    }
+
+    // Start with boundary translated by first geometry vertex
+    let first_g = geometry[0];
+    let mut result: Vec<[f64; 2]> = boundary
+        .iter()
+        .map(|&(x, y)| [x - first_g.0, y - first_g.1])
+        .collect();
+
+    // Intersect with boundary translated by each remaining vertex
+    for &(gx, gy) in geometry.iter().skip(1) {
+        let translated: Vec<[f64; 2]> = boundary.iter().map(|&(x, y)| [x - gx, y - gy]).collect();
+
+        // Intersect current result with translated boundary using i_overlay
+        let shapes = result.overlay(&[translated], OverlayRule::Intersect, FillRule::NonZero);
+
+        if shapes.is_empty() {
+            return Err(Error::InvalidGeometry(
+                "Geometry too large to fit in boundary".into(),
+            ));
+        }
+
+        // Take the first (largest) resulting polygon
+        result = Vec::new();
+        for shape in &shapes {
+            for contour in shape {
+                if contour.len() >= 3 {
+                    result = contour.clone();
+                    break;
+                }
+            }
+            if !result.is_empty() {
+                break;
+            }
+        }
+
+        if result.len() < 3 {
+            return Err(Error::InvalidGeometry(
+                "Geometry too large to fit in boundary".into(),
+            ));
+        }
+    }
+
+    // Convert back to (f64, f64) format
+    let result_tuples: Vec<(f64, f64)> = result.iter().map(|&[x, y]| (x, y)).collect();
+    Ok(Nfp::from_polygon(result_tuples))
 }
 
 /// Shrinks a polygon by moving all edges inward by the given offset.
@@ -556,14 +667,6 @@ fn union_polygons(polygons: &[Vec<(f64, f64)>]) -> Result<Nfp> {
 }
 
 /// Computes Minkowski sum for general (non-convex) polygons.
-fn compute_minkowski_sum_general(poly_a: &[(f64, f64)], poly_b: &[(f64, f64)]) -> Result<Nfp> {
-    // Use convex hull approximation for general case
-    let hull_a = convex_hull_of_points(poly_a);
-    let hull_b = convex_hull_of_points(poly_b);
-
-    compute_minkowski_sum_convex(&hull_a, &hull_b)
-}
-
 // ============================================================================
 // Helper functions
 // ============================================================================
@@ -775,6 +878,63 @@ pub fn point_outside_all_nfps(point: (f64, f64), nfps: &[&Nfp]) -> bool {
     true
 }
 
+/// Checks if a point is strictly outside all NFPs (boundary points are considered outside).
+/// This allows pieces to touch but not overlap.
+fn point_outside_all_nfps_strict(point: (f64, f64), nfps: &[&Nfp]) -> bool {
+    for nfp in nfps {
+        for polygon in &nfp.polygons {
+            // Point must be strictly outside (interior = overlapping)
+            if point_in_polygon(point, polygon) {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+/// Checks if a point is on the boundary of a polygon (not strictly inside or outside).
+fn point_on_polygon_boundary(point: (f64, f64), polygon: &[(f64, f64)]) -> bool {
+    let (px, py) = point;
+    let n = polygon.len();
+    const EPS: f64 = 1e-10;
+
+    for i in 0..n {
+        let (x1, y1) = polygon[i];
+        let (x2, y2) = polygon[(i + 1) % n];
+
+        // Check if point is on this edge segment
+        // Using parametric form: P = P1 + t*(P2-P1), 0 <= t <= 1
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let len_sq = dx * dx + dy * dy;
+
+        if len_sq < EPS * EPS {
+            // Degenerate edge - check if point is at vertex
+            if (px - x1).abs() < EPS && (py - y1).abs() < EPS {
+                return true;
+            }
+            continue;
+        }
+
+        // Project point onto line
+        let t = ((px - x1) * dx + (py - y1) * dy) / len_sq;
+
+        // Check if projection is within segment
+        if t >= -EPS && t <= 1.0 + EPS {
+            // Check distance from line
+            let proj_x = x1 + t * dx;
+            let proj_y = y1 + t * dy;
+            let dist_sq = (px - proj_x).powi(2) + (py - proj_y).powi(2);
+
+            if dist_sq < EPS * EPS {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
 /// Finds the optimal placement point that minimizes strip length.
 ///
 /// The valid region is defined as points that are:
@@ -832,17 +992,20 @@ pub fn find_bottom_left_placement(
         y += sample_step;
     }
 
-    // Filter candidates to those inside IFP and outside all NFPs
+    // Filter candidates to those inside IFP (including boundary) and outside all NFPs
     let valid_candidates: Vec<(f64, f64)> = candidates
         .into_iter()
         .filter(|&point| {
-            // Must be inside IFP
-            let in_ifp = ifp.polygons.iter().any(|p| point_in_polygon(point, p));
+            // Must be inside IFP (including boundary points)
+            let in_ifp =
+                ifp.polygons
+                    .iter()
+                    .any(|p| point_in_polygon(point, p) || point_on_polygon_boundary(point, p));
             if !in_ifp {
                 return false;
             }
-            // Must be outside all NFPs
-            point_outside_all_nfps(point, nfps)
+            // Must be outside all NFPs (boundary points OK - touching but not overlapping)
+            point_outside_all_nfps_strict(point, nfps)
         })
         .collect();
 
@@ -1120,6 +1283,77 @@ mod tests {
 
         assert!(!ifp.is_empty());
         // IFP should be a rectangle of size (100-10) x (100-10) = 90 x 90
+        // Valid placements: X in [0, 90], Y in [0, 90]
+        let polygon = &ifp.polygons[0];
+        let (min_x, min_y, max_x, max_y) = bounding_box(polygon);
+        assert_relative_eq!(min_x, 0.0, epsilon = 1e-10);
+        assert_relative_eq!(min_y, 0.0, epsilon = 1e-10);
+        assert_relative_eq!(max_x, 90.0, epsilon = 1e-10);
+        assert_relative_eq!(max_y, 90.0, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn test_ifp_bounds_correct() {
+        // Test case from failing test: 25x25 rectangle in 100x50 boundary
+        let boundary = rect(100.0, 50.0);
+        let geom = Geometry2D::rectangle("R", 25.0, 25.0);
+
+        let ifp = compute_ifp(&boundary, &geom, 0.0).unwrap();
+
+        assert!(!ifp.is_empty());
+        // IFP should be [0, 75] x [0, 25]
+        let polygon = &ifp.polygons[0];
+        let (min_x, min_y, max_x, max_y) = bounding_box(polygon);
+        assert_relative_eq!(min_x, 0.0, epsilon = 1e-10);
+        assert_relative_eq!(min_y, 0.0, epsilon = 1e-10);
+        assert_relative_eq!(max_x, 75.0, epsilon = 1e-10);
+        assert_relative_eq!(max_y, 25.0, epsilon = 1e-10);
+
+        // Positions at (0,0), (25,0), (50,0), (75,0) should all be valid
+        assert!(point_in_polygon((0.0, 0.0), polygon) || point_on_boundary((0.0, 0.0), polygon));
+        assert!(point_in_polygon((25.0, 0.0), polygon) || point_on_boundary((25.0, 0.0), polygon));
+        assert!(point_in_polygon((50.0, 0.0), polygon) || point_on_boundary((50.0, 0.0), polygon));
+        assert!(point_in_polygon((75.0, 0.0), polygon) || point_on_boundary((75.0, 0.0), polygon));
+    }
+
+    /// Helper to check if point is on polygon boundary
+    fn point_on_boundary(point: (f64, f64), polygon: &[(f64, f64)]) -> bool {
+        let (px, py) = point;
+        let n = polygon.len();
+        for i in 0..n {
+            let (x1, y1) = polygon[i];
+            let (x2, y2) = polygon[(i + 1) % n];
+            // Check if point is on line segment
+            let d1 = ((px - x1).powi(2) + (py - y1).powi(2)).sqrt();
+            let d2 = ((px - x2).powi(2) + (py - y2).powi(2)).sqrt();
+            let d_total = ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt();
+            if (d1 + d2 - d_total).abs() < 1e-10 {
+                return true;
+            }
+        }
+        false
+    }
+
+    #[test]
+    fn test_nfp_same_size_rectangles() {
+        // Two same-size rectangles: NFP should be twice the size
+        let a = Geometry2D::rectangle("A", 25.0, 25.0);
+        let b = Geometry2D::rectangle("B", 25.0, 25.0);
+
+        let nfp = compute_nfp(&a, &b, 0.0).unwrap();
+        assert!(!nfp.is_empty());
+
+        let polygon = &nfp.polygons[0];
+        let (min_x, min_y, max_x, max_y) = bounding_box(polygon);
+        // NFP should span from -25 to +25 in each dimension = 50x50
+        // Actually depends on reference point. Let's check actual dimensions.
+        let width = max_x - min_x;
+        let height = max_y - min_y;
+        eprintln!("NFP dimensions: {}x{}", width, height);
+        eprintln!("NFP bounds: ({}, {}) to ({}, {})", min_x, min_y, max_x, max_y);
+        // NFP of two identical rectangles should be 50x50
+        assert_relative_eq!(width, 50.0, epsilon = 1e-6);
+        assert_relative_eq!(height, 50.0, epsilon = 1e-6);
     }
 
     #[test]
