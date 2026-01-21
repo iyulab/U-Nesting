@@ -9,12 +9,18 @@ use crate::nfp::{
 };
 use crate::alns_nesting::run_alns_nesting;
 use crate::gdrr_nesting::run_gdrr_nesting;
+#[cfg(feature = "milp")]
+use crate::milp_solver::run_milp_nesting;
+#[cfg(feature = "milp")]
+use crate::nfp_cm_solver::run_nfp_cm_nesting;
 use crate::sa_nesting::run_sa_nesting;
-use u_nesting_core::brkga::BrkgaConfig;
-use u_nesting_core::ga::GaConfig;
-use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::alns::AlnsConfig;
+use u_nesting_core::brkga::BrkgaConfig;
+#[cfg(feature = "milp")]
+use u_nesting_core::exact::ExactConfig;
+use u_nesting_core::ga::GaConfig;
 use u_nesting_core::gdrr::GdrrConfig;
+use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::sa::SaConfig;
 use u_nesting_core::solver::{Config, ProgressCallback, ProgressInfo, Solver, Strategy};
 use u_nesting_core::{Placement, Result, SolveResult};
@@ -585,6 +591,64 @@ impl Nester2D {
         Ok(result)
     }
 
+    /// MILP-based exact solver.
+    #[cfg(feature = "milp")]
+    fn milp_exact(
+        &self,
+        geometries: &[Geometry2D],
+        boundary: &Boundary2D,
+    ) -> Result<SolveResult<f64>> {
+        let exact_config = ExactConfig::default()
+            .with_time_limit_ms(self.config.time_limit_ms.max(60000))
+            .with_max_items(15)
+            .with_rotation_steps(4)
+            .with_grid_step(1.0);
+
+        let result = run_milp_nesting(
+            geometries,
+            boundary,
+            &self.config,
+            &exact_config,
+            self.cancelled.clone(),
+        );
+
+        Ok(result)
+    }
+
+    /// Hybrid exact solver: try MILP first, fallback to heuristic.
+    #[cfg(feature = "milp")]
+    fn hybrid_exact(
+        &self,
+        geometries: &[Geometry2D],
+        boundary: &Boundary2D,
+    ) -> Result<SolveResult<f64>> {
+        // Count total instances
+        let total_instances: usize = geometries.iter().map(|g| g.quantity()).sum();
+
+        // If small enough, try exact
+        if total_instances <= 15 {
+            let exact_config = ExactConfig::default()
+                .with_time_limit_ms((self.config.time_limit_ms / 2).max(30000))
+                .with_max_items(15);
+
+            let exact_result = run_milp_nesting(
+                geometries,
+                boundary,
+                &self.config,
+                &exact_config,
+                self.cancelled.clone(),
+            );
+
+            // If got a good solution, return it
+            if !exact_result.placements.is_empty() {
+                return Ok(exact_result);
+            }
+        }
+
+        // Fallback to ALNS (best heuristic)
+        self.alns(geometries, boundary)
+    }
+
     /// Bottom-Left Fill with progress callback.
     fn bottom_left_fill_with_progress(
         &self,
@@ -961,6 +1025,10 @@ impl Solver for Nester2D {
             Strategy::SimulatedAnnealing => self.simulated_annealing(geometries, boundary),
             Strategy::Gdrr => self.gdrr(geometries, boundary),
             Strategy::Alns => self.alns(geometries, boundary),
+            #[cfg(feature = "milp")]
+            Strategy::MilpExact => self.milp_exact(geometries, boundary),
+            #[cfg(feature = "milp")]
+            Strategy::HybridExact => self.hybrid_exact(geometries, boundary),
             _ => {
                 // Fall back to NFP-guided BLF for other strategies
                 log::warn!(

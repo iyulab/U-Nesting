@@ -52,6 +52,9 @@ libc = "0.2"
 log = "0.4"
 tracing = "0.1"
 
+# Optimization solvers
+good_lp = { version = "1.10", default-features = false }
+
 # Testing
 proptest = "1.5"
 approx = "0.5"

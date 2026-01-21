@@ -24,6 +24,9 @@ rayon.workspace = true
 rand.workspace = true
 log.workspace = true
 
+# Optional MILP solver for exact methods
+good_lp = { workspace = true, optional = true, features = ["highs"] }
+
 [dev-dependencies]
 proptest.workspace = true
 approx.workspace = true
@@ -32,6 +35,7 @@ criterion.workspace = true
 [features]
 default = []
 serde = ["dep:serde", "u-nesting-core/serde", "geo/use-serde", "nalgebra/serde-serialize"]
+milp = ["dep:good_lp"]
 
 [[bench]]
 name = "nfp_bench"

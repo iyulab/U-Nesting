@@ -28,6 +28,10 @@ pub enum Strategy {
     Gdrr,
     /// Adaptive Large Neighborhood Search (ALNS).
     Alns,
+    /// MILP-based exact solver (small instances, optimal solution).
+    MilpExact,
+    /// Hybrid: Try exact first, fallback to heuristic on timeout.
+    HybridExact,
 }
 
 /// Common configuration for solvers.

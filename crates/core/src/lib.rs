@@ -49,6 +49,7 @@
 pub mod alns;
 pub mod brkga;
 pub mod error;
+pub mod exact;
 pub mod ga;
 pub mod gdrr;
 pub mod geometry;
@@ -84,5 +85,6 @@ pub use alns::{
     AlnsConfig, AlnsProblem, AlnsProgress, AlnsResult, AlnsRunner, AlnsSolution,
     DestroyOperatorId, DestroyResult, OperatorStats, RepairOperatorId, RepairResult,
 };
+pub use exact::{ExactConfig, ExactResult, SolutionStatus};
 pub use solver::{Config, ProgressCallback, ProgressInfo, Solver, Strategy};
 pub use transform::{Transform2D, Transform3D, AABB2D, AABB3D};
