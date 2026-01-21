@@ -28,18 +28,18 @@ pub mod solver;
 pub mod transform;
 
 // Re-exports
-pub use error::{Error, Result};
 pub use brkga::{BrkgaConfig, BrkgaProblem, BrkgaResult, BrkgaRunner, RandomKeyChromosome};
+pub use error::{Error, Result};
 pub use ga::{GaConfig, GaProblem, GaResult, GaRunner, Individual, PermutationChromosome};
-pub use sa::{
-    CoolingSchedule, NeighborhoodOperator, PermutationSolution, SaConfig, SaProblem, SaResult,
-    SaRunner, SaSolution,
-};
 pub use geometry::{
     Boundary, Boundary2DExt, Boundary3DExt, Geometry, Geometry2DExt, Geometry3DExt, GeometryId,
     Orientation3D, RotationConstraint,
 };
 pub use placement::Placement;
 pub use result::{SolveResult, SolveSummary};
+pub use sa::{
+    CoolingSchedule, NeighborhoodOperator, PermutationSolution, SaConfig, SaProblem, SaResult,
+    SaRunner, SaSolution,
+};
 pub use solver::{Config, ProgressCallback, ProgressInfo, Solver, Strategy};
 pub use transform::{Transform2D, Transform3D, AABB2D, AABB3D};

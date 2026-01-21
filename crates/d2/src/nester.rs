@@ -170,10 +170,11 @@ impl Nester2D {
 
                 for &rotation in &rotation_angles {
                     // Compute IFP for this geometry at this rotation (with margin from boundary)
-                    let ifp = match compute_ifp_with_margin(&boundary_polygon, geom, rotation, margin) {
-                        Ok(ifp) => ifp,
-                        Err(_) => continue,
-                    };
+                    let ifp =
+                        match compute_ifp_with_margin(&boundary_polygon, geom, rotation, margin) {
+                            Ok(ifp) => ifp,
+                            Err(_) => continue,
+                        };
 
                     if ifp.is_empty() {
                         continue;
@@ -184,8 +185,9 @@ impl Nester2D {
                     for placed in &placed_geometries {
                         // Create a temporary geometry at the placed position
                         let placed_exterior = placed.translated_exterior();
-                        let placed_geom = Geometry2D::new(format!("_placed_{}", placed.geometry.id()))
-                            .with_polygon(placed_exterior);
+                        let placed_geom =
+                            Geometry2D::new(format!("_placed_{}", placed.geometry.id()))
+                                .with_polygon(placed_exterior);
 
                         // Compute NFP with spacing
                         let nfp = match compute_nfp(&placed_geom, geom, rotation) {
@@ -203,7 +205,9 @@ impl Nester2D {
 
                     // Find the bottom-left valid placement
                     let nfp_refs: Vec<&Nfp> = nfps.iter().collect();
-                    if let Some((x, y)) = find_bottom_left_placement(&ifp_shrunk, &nfp_refs, sample_step) {
+                    if let Some((x, y)) =
+                        find_bottom_left_placement(&ifp_shrunk, &nfp_refs, sample_step)
+                    {
                         // Compare with current best (bottom-left preference)
                         let is_better = match best_placement {
                             None => true,
@@ -217,13 +221,7 @@ impl Nester2D {
 
                 // Place the geometry at the best position found
                 if let Some((x, y, rotation)) = best_placement {
-                    let placement = Placement::new_2d(
-                        geom.id().clone(),
-                        instance,
-                        x,
-                        y,
-                        rotation,
-                    );
+                    let placement = Placement::new_2d(geom.id().clone(), instance, x, y, rotation);
 
                     placements.push(placement);
                     placed_geometries.push(PlacedGeometry::new(geom.clone(), (x, y), rotation));
@@ -389,11 +387,7 @@ impl Nester2D {
     /// BRKGA (Biased Random-Key Genetic Algorithm) based nesting optimization.
     ///
     /// Uses random-key encoding and biased crossover for robust optimization.
-    fn brkga(
-        &self,
-        geometries: &[Geometry2D],
-        boundary: &Boundary2D,
-    ) -> Result<SolveResult<f64>> {
+    fn brkga(&self, geometries: &[Geometry2D], boundary: &Boundary2D) -> Result<SolveResult<f64>> {
         // Configure BRKGA with reasonable defaults
         let brkga_config = BrkgaConfig::default()
             .with_population_size(50)
@@ -448,7 +442,9 @@ fn polygon_centroid(polygon: &[(f64, f64)]) -> (f64, f64) {
         return (0.0, 0.0);
     }
 
-    let sum: (f64, f64) = polygon.iter().fold((0.0, 0.0), |acc, &(x, y)| (acc.0 + x, acc.1 + y));
+    let sum: (f64, f64) = polygon
+        .iter()
+        .fold((0.0, 0.0), |acc, &(x, y)| (acc.0 + x, acc.1 + y));
     let n = polygon.len() as f64;
     (sum.0 / n, sum.1 / n)
 }

@@ -181,7 +181,11 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        Commands::RunAll { preset, output, csv } => {
+        Commands::RunAll {
+            preset,
+            output,
+            csv,
+        } => {
             let config = match preset {
                 Preset::Quick => BenchmarkConfig::quick(),
                 Preset::Standard => BenchmarkConfig::standard(),

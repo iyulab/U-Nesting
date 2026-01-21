@@ -45,7 +45,11 @@ impl DatasetParser {
     }
 
     /// Downloads and parses a dataset from GitHub.
-    pub fn download_and_parse(&self, dataset_name: &str, instance: &str) -> Result<Dataset, ParseError> {
+    pub fn download_and_parse(
+        &self,
+        dataset_name: &str,
+        instance: &str,
+    ) -> Result<Dataset, ParseError> {
         let url = format!(
             "https://raw.githubusercontent.com/Oscar-Oliveira/OR-Datasets/master/Cutting-and-Packing/2D-Irregular/Datasets/{}/json/{}.json",
             dataset_name.to_uppercase(),
@@ -66,17 +70,8 @@ impl DatasetParser {
     /// Lists available datasets.
     pub fn list_available_datasets() -> Vec<&'static str> {
         vec![
-            "ALBANO",
-            "BLAZ",
-            "DAGLI",
-            "FU",
-            "JAKOBS",
-            "MAO",
-            "MARQUES",
-            "SHAPES",
-            "SHIRTS",
-            "SWIM",
-            "TROUSERS",
+            "ALBANO", "BLAZ", "DAGLI", "FU", "JAKOBS", "MAO", "MARQUES", "SHAPES", "SHIRTS",
+            "SWIM", "TROUSERS",
         ]
     }
 
@@ -111,15 +106,11 @@ impl DatasetParser {
     /// Converts a raw shape to our format.
     fn convert_raw_shape(&self, raw: RawShape) -> Result<Shape, ParseError> {
         match raw {
-            RawShape::SimplePolygon { data } => {
-                Ok(Shape::SimplePolygon(data))
-            }
+            RawShape::SimplePolygon { data } => Ok(Shape::SimplePolygon(data)),
             RawShape::PolygonWithHoles { outer, holes } => {
                 Ok(Shape::PolygonWithHoles { outer, holes })
             }
-            RawShape::MultiPolygon { data } => {
-                Ok(Shape::MultiPolygon(data))
-            }
+            RawShape::MultiPolygon { data } => Ok(Shape::MultiPolygon(data)),
         }
     }
 }

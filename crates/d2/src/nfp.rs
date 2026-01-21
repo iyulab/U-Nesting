@@ -80,11 +80,7 @@ impl Default for Nfp {
 ///
 /// # Returns
 /// The computed NFP, or an error if computation fails.
-pub fn compute_nfp(
-    stationary: &Geometry2D,
-    orbiting: &Geometry2D,
-    rotation: f64,
-) -> Result<Nfp> {
+pub fn compute_nfp(stationary: &Geometry2D, orbiting: &Geometry2D, rotation: f64) -> Result<Nfp> {
     // Get the polygons
     let stat_exterior = stationary.exterior();
     let orb_exterior = orbiting.exterior();
@@ -226,9 +222,7 @@ fn shrink_polygon(polygon: &[(f64, f64)], offset: f64) -> Result<Vec<(f64, f64)>
 
             // Check if still valid
             if new_min_x >= new_max_x || new_min_y >= new_max_y {
-                return Err(Error::InvalidGeometry(
-                    "Offset polygon collapsed".into(),
-                ));
+                return Err(Error::InvalidGeometry("Offset polygon collapsed".into()));
             }
 
             return Ok(vec![
@@ -263,17 +257,13 @@ fn shrink_polygon(polygon: &[(f64, f64)], offset: f64) -> Result<Vec<(f64, f64)>
 
     // Validate result polygon has reasonable size
     if result.len() < 3 {
-        return Err(Error::InvalidGeometry(
-            "Offset polygon collapsed".into(),
-        ));
+        return Err(Error::InvalidGeometry("Offset polygon collapsed".into()));
     }
 
     // Check if the polygon has positive area (not self-intersecting)
     let area = signed_area(&result).abs();
     if area <= 1e-10 {
-        return Err(Error::InvalidGeometry(
-            "Offset polygon collapsed".into(),
-        ));
+        return Err(Error::InvalidGeometry("Offset polygon collapsed".into()));
     }
 
     Ok(result)
@@ -526,10 +516,7 @@ fn union_polygons(polygons: &[Vec<(f64, f64)>]) -> Result<Nfp> {
     }
 
     // Start with the first polygon
-    let mut result: Vec<Vec<[f64; 2]>> = vec![polygons[0]
-        .iter()
-        .map(|&(x, y)| [x, y])
-        .collect()];
+    let mut result: Vec<Vec<[f64; 2]>> = vec![polygons[0].iter().map(|&(x, y)| [x, y]).collect()];
 
     // Union with each subsequent polygon
     for polygon in &polygons[1..] {
@@ -853,18 +840,16 @@ pub fn find_bottom_left_placement(
         .collect();
 
     // Find bottom-left point (minimize y first, then x)
-    valid_candidates
-        .into_iter()
-        .min_by(|a, b| {
-            // Compare y first (bottom), then x (left)
-            match a.1.partial_cmp(&b.1) {
-                Some(std::cmp::Ordering::Equal) => {
-                    a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal)
-                }
-                Some(ord) => ord,
-                None => std::cmp::Ordering::Equal,
+    valid_candidates.into_iter().min_by(|a, b| {
+        // Compare y first (bottom), then x (left)
+        match a.1.partial_cmp(&b.1) {
+            Some(std::cmp::Ordering::Equal) => {
+                a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal)
             }
-        })
+            Some(ord) => ord,
+            None => std::cmp::Ordering::Equal,
+        }
+    })
 }
 
 /// Computes the bounding box of an NFP.
@@ -1150,10 +1135,7 @@ mod tests {
             .unwrap();
 
         // Should only compute once
-        assert_eq!(
-            compute_count.load(std::sync::atomic::Ordering::SeqCst),
-            1
-        );
+        assert_eq!(compute_count.load(std::sync::atomic::Ordering::SeqCst), 1);
         assert_eq!(result1.polygons, result2.polygons);
         assert_eq!(cache.len(), 1);
     }
@@ -1238,7 +1220,10 @@ mod tests {
 
         // Shrinking by 6 should collapse the 10x10 polygon (becomes 0 or negative)
         let result = shrink_polygon(&small_square, 6.0);
-        assert!(result.is_err(), "Polygon should collapse when offset >= width/2");
+        assert!(
+            result.is_err(),
+            "Polygon should collapse when offset >= width/2"
+        );
     }
 
     #[test]
@@ -1280,7 +1265,10 @@ mod tests {
 
         // Margin of 12 would make the effective boundary negative (collapse)
         let result = shrink_polygon(&boundary, 12.0);
-        assert!(result.is_err(), "Boundary should collapse with margin >= width/2");
+        assert!(
+            result.is_err(),
+            "Boundary should collapse with margin >= width/2"
+        );
     }
 
     #[test]
@@ -1310,15 +1298,14 @@ mod tests {
     #[test]
     fn test_nfp_non_convex_l_shape() {
         // L-shape is not convex
-        let l_shape = Geometry2D::new("L")
-            .with_polygon(vec![
-                (0.0, 0.0),
-                (20.0, 0.0),
-                (20.0, 10.0),
-                (10.0, 10.0),
-                (10.0, 20.0),
-                (0.0, 20.0),
-            ]);
+        let l_shape = Geometry2D::new("L").with_polygon(vec![
+            (0.0, 0.0),
+            (20.0, 0.0),
+            (20.0, 10.0),
+            (10.0, 10.0),
+            (10.0, 20.0),
+            (0.0, 20.0),
+        ]);
 
         let small_square = Geometry2D::rectangle("S", 5.0, 5.0);
 

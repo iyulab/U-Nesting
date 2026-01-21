@@ -66,11 +66,7 @@ impl SaNestingProblem {
         for (geom_idx, geom) in geometries.iter().enumerate() {
             // Get rotation angles for this geometry
             let angles = geom.rotations();
-            let angles = if angles.is_empty() {
-                vec![0.0]
-            } else {
-                angles
-            };
+            let angles = if angles.is_empty() { vec![0.0] } else { angles };
             max_rotation_options = max_rotation_options.max(angles.len());
             rotation_angles.push(angles);
 
@@ -177,13 +173,8 @@ impl SaNestingProblem {
             // Find the bottom-left valid placement
             let nfp_refs: Vec<&Nfp> = nfps.iter().collect();
             if let Some((x, y)) = find_bottom_left_placement(&ifp_shrunk, &nfp_refs, sample_step) {
-                let placement = Placement::new_2d(
-                    geom.id().clone(),
-                    info.instance_num,
-                    x,
-                    y,
-                    rotation_angle,
-                );
+                let placement =
+                    Placement::new_2d(geom.id().clone(), info.instance_num, x, y, rotation_angle);
 
                 placements.push(placement);
                 placed_geometries.push(PlacedGeometry::new(geom.clone(), (x, y), rotation_angle));
@@ -503,11 +494,9 @@ mod tests {
 
     #[test]
     fn test_sa_nesting_with_rotation() {
-        let geometries = vec![
-            Geometry2D::rectangle("R1", 30.0, 10.0)
-                .with_quantity(3)
-                .with_rotations(vec![0.0, 90.0]),
-        ];
+        let geometries = vec![Geometry2D::rectangle("R1", 30.0, 10.0)
+            .with_quantity(3)
+            .with_rotations(vec![0.0, 90.0])];
 
         let boundary = Boundary2D::rectangle(50.0, 50.0);
         let config = Config::default();

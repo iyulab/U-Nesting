@@ -215,23 +215,17 @@ impl BenchmarkRunner {
                 let geom_id = format!("piece_{}", item.piece_id);
                 let geom = match &item.shape {
                     Shape::SimplePolygon(points) => {
-                        let vertices: Vec<(f64, f64)> = points
-                            .iter()
-                            .map(|[x, y]| (*x, *y))
-                            .collect();
+                        let vertices: Vec<(f64, f64)> =
+                            points.iter().map(|[x, y]| (*x, *y)).collect();
                         Geometry2D::new(geom_id).with_polygon(vertices)
                     }
                     Shape::PolygonWithHoles { outer, holes } => {
-                        let exterior: Vec<(f64, f64)> = outer
-                            .iter()
-                            .map(|[x, y]| (*x, *y))
-                            .collect();
+                        let exterior: Vec<(f64, f64)> =
+                            outer.iter().map(|[x, y]| (*x, *y)).collect();
                         let mut geom = Geometry2D::new(geom_id).with_polygon(exterior);
                         for hole in holes {
-                            let hole_verts: Vec<(f64, f64)> = hole
-                                .iter()
-                                .map(|[x, y]| (*x, *y))
-                                .collect();
+                            let hole_verts: Vec<(f64, f64)> =
+                                hole.iter().map(|[x, y]| (*x, *y)).collect();
                             geom = geom.with_hole(hole_verts);
                         }
                         geom
@@ -240,10 +234,8 @@ impl BenchmarkRunner {
                         // For multi-polygon, just use the first polygon
                         // (proper handling would require multiple geometries)
                         if let Some(first) = polygons.first() {
-                            let vertices: Vec<(f64, f64)> = first
-                                .iter()
-                                .map(|[x, y]| (*x, *y))
-                                .collect();
+                            let vertices: Vec<(f64, f64)> =
+                                first.iter().map(|[x, y]| (*x, *y)).collect();
                             Geometry2D::new(geom_id).with_polygon(vertices)
                         } else {
                             Geometry2D::new(geom_id)
@@ -277,8 +269,8 @@ impl BenchmarkRunner {
         result: &u_nesting_core::SolveResult<f64>,
         geometries: &[Geometry2D],
     ) -> f64 {
-        use u_nesting_core::geometry::Geometry;
         use std::collections::HashMap;
+        use u_nesting_core::geometry::Geometry;
 
         // Build a map from geometry_id to index
         let id_to_idx: HashMap<&str, usize> = geometries

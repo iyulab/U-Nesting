@@ -174,11 +174,7 @@ impl Packer3D {
     /// BRKGA (Biased Random-Key Genetic Algorithm) based packing optimization.
     ///
     /// Uses random-key encoding and biased crossover for robust optimization.
-    fn brkga(
-        &self,
-        geometries: &[Geometry3D],
-        boundary: &Boundary3D,
-    ) -> Result<SolveResult<f64>> {
+    fn brkga(&self, geometries: &[Geometry3D], boundary: &Boundary3D) -> Result<SolveResult<f64>> {
         // Configure BRKGA with reasonable defaults
         let brkga_config = BrkgaConfig::default()
             .with_population_size(50)
@@ -249,12 +245,7 @@ impl Packer3D {
         let mut placements = Vec::new();
         for (id, instance, position, _orientation) in ep_placements {
             let placement = Placement::new_3d(
-                id,
-                instance,
-                position.x,
-                position.y,
-                position.z,
-                0.0, // rotation_x
+                id, instance, position.x, position.y, position.z, 0.0, // rotation_x
                 0.0, // rotation_y
                 0.0, // rotation_z (orientation handled internally)
             );
@@ -432,11 +423,9 @@ mod tests {
         use crate::geometry::OrientationConstraint;
 
         // Box that fits better when rotated
-        let geometries = vec![
-            Geometry3D::new("B1", 50.0, 10.0, 10.0)
-                .with_quantity(2)
-                .with_orientation(OrientationConstraint::Any),
-        ];
+        let geometries = vec![Geometry3D::new("B1", 50.0, 10.0, 10.0)
+            .with_quantity(2)
+            .with_orientation(OrientationConstraint::Any)];
 
         // Container where orientation matters
         let boundary = Boundary3D::new(60.0, 60.0, 60.0);

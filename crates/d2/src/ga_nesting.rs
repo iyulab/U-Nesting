@@ -234,11 +234,7 @@ impl NestingProblem {
         for (geom_idx, geom) in geometries.iter().enumerate() {
             // Get rotation angles for this geometry
             let angles = geom.rotations();
-            let angles = if angles.is_empty() {
-                vec![0.0]
-            } else {
-                angles
-            };
+            let angles = if angles.is_empty() { vec![0.0] } else { angles };
             rotation_angles.push(angles);
 
             // Create instances
@@ -341,13 +337,8 @@ impl NestingProblem {
             // Find the bottom-left valid placement
             let nfp_refs: Vec<&Nfp> = nfps.iter().collect();
             if let Some((x, y)) = find_bottom_left_placement(&ifp_shrunk, &nfp_refs, sample_step) {
-                let placement = Placement::new_2d(
-                    geom.id().clone(),
-                    info.instance_num,
-                    x,
-                    y,
-                    rotation_angle,
-                );
+                let placement =
+                    Placement::new_2d(geom.id().clone(), info.instance_num, x, y, rotation_angle);
 
                 placements.push(placement);
                 placed_geometries.push(PlacedGeometry::new(geom.clone(), (x, y), rotation_angle));
@@ -463,7 +454,9 @@ fn polygon_centroid(polygon: &[(f64, f64)]) -> (f64, f64) {
         return (0.0, 0.0);
     }
 
-    let sum: (f64, f64) = polygon.iter().fold((0.0, 0.0), |acc, &(x, y)| (acc.0 + x, acc.1 + y));
+    let sum: (f64, f64) = polygon
+        .iter()
+        .fold((0.0, 0.0), |acc, &(x, y)| (acc.0 + x, acc.1 + y));
     let n = polygon.len() as f64;
     (sum.0 / n, sum.1 / n)
 }
@@ -662,11 +655,9 @@ mod tests {
     #[test]
     fn test_ga_nesting_with_rotation() {
         // L-shaped pieces that might benefit from rotation
-        let geometries = vec![
-            Geometry2D::rectangle("R1", 30.0, 10.0)
-                .with_quantity(3)
-                .with_rotations(vec![0.0, 90.0]),
-        ];
+        let geometries = vec![Geometry2D::rectangle("R1", 30.0, 10.0)
+            .with_quantity(3)
+            .with_rotations(vec![0.0, 90.0])];
 
         let boundary = Boundary2D::rectangle(50.0, 50.0);
         let config = Config::default();
@@ -689,9 +680,7 @@ mod tests {
 
     #[test]
     fn test_nesting_problem_decode() {
-        let geometries = vec![
-            Geometry2D::rectangle("R1", 20.0, 10.0).with_quantity(2),
-        ];
+        let geometries = vec![Geometry2D::rectangle("R1", 20.0, 10.0).with_quantity(2)];
 
         let boundary = Boundary2D::rectangle(100.0, 50.0);
         let config = Config::default();

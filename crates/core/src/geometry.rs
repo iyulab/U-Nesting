@@ -24,7 +24,6 @@ pub enum RotationConstraint<S> {
     Discrete(Vec<S>),
 }
 
-
 impl<S: RealField + Copy> RotationConstraint<S> {
     /// Creates a constraint for axis-aligned rotations only (0, 90, 180, 270 degrees).
     pub fn axis_aligned() -> Self {
@@ -223,7 +222,6 @@ pub enum Orientation3D {
     /// Free rotation (any orientation).
     Free,
 }
-
 
 impl Orientation3D {
     /// Returns the number of discrete orientations.

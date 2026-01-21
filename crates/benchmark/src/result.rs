@@ -149,8 +149,10 @@ impl BenchmarkResult {
                 run.utilization,
                 run.time_ms,
                 run.iterations.map_or(String::new(), |i| i.to_string()),
-                run.best_known.map_or(String::new(), |b| format!("{:.2}", b)),
-                run.gap_percent.map_or(String::new(), |g| format!("{:.2}", g)),
+                run.best_known
+                    .map_or(String::new(), |b| format!("{:.2}", b)),
+                run.gap_percent
+                    .map_or(String::new(), |g| format!("{:.2}", g)),
             )?;
         }
 
@@ -169,7 +171,9 @@ impl BenchmarkResult {
         println!("{:-<100}", "");
 
         for run in &self.runs {
-            let gap_str = run.gap_percent.map_or("-".to_string(), |g| format!("{:.1}", g));
+            let gap_str = run
+                .gap_percent
+                .map_or("-".to_string(), |g| format!("{:.1}", g));
             println!(
                 "{:<15} {:<15} {:<20} {:>12.2} {:>10.1} {:>10} {:>10}",
                 run.dataset,

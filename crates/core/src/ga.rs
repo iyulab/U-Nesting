@@ -271,9 +271,8 @@ where
 
             // Fill the rest with crossover and mutation
             // Generate all children first (sequential due to RNG dependency)
-            let mut children: Vec<P::Individual> = Vec::with_capacity(
-                self.config.population_size - new_population.len(),
-            );
+            let mut children: Vec<P::Individual> =
+                Vec::with_capacity(self.config.population_size - new_population.len());
 
             while children.len() < self.config.population_size - new_population.len() {
                 // Selection (tournament)

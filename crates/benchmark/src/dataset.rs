@@ -148,9 +148,7 @@ impl Shape {
                 }
                 all
             }
-            Shape::MultiPolygon(polygons) => {
-                polygons.iter().flatten().cloned().collect()
-            }
+            Shape::MultiPolygon(polygons) => polygons.iter().flatten().cloned().collect(),
         }
     }
 
@@ -163,9 +161,7 @@ impl Shape {
                 let holes_area: f64 = holes.iter().map(|h| polygon_area(h).abs()).sum();
                 outer_area.abs() - holes_area
             }
-            Shape::MultiPolygon(polygons) => {
-                polygons.iter().map(|p| polygon_area(p).abs()).sum()
-            }
+            Shape::MultiPolygon(polygons) => polygons.iter().map(|p| polygon_area(p).abs()).sum(),
         }
     }
 }

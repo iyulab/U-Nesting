@@ -409,13 +409,7 @@ impl<P: SaProblem> SaRunner<P> {
     }
 
     /// Apply cooling schedule.
-    fn cool_down(
-        &self,
-        current_temp: f64,
-        delta: f64,
-        accepted: usize,
-        total: usize,
-    ) -> f64 {
+    fn cool_down(&self, current_temp: f64, delta: f64, accepted: usize, total: usize) -> f64 {
         match self.config.cooling_schedule {
             CoolingSchedule::Geometric => current_temp * self.config.cooling_rate,
             CoolingSchedule::Linear => (current_temp - delta).max(self.config.final_temp),
@@ -561,7 +555,9 @@ impl PermutationSolution {
         if from != to {
             let elem = result.sequence.remove(from);
             let insert_pos = if to > from { to - 1 } else { to };
-            result.sequence.insert(insert_pos.min(result.sequence.len()), elem);
+            result
+                .sequence
+                .insert(insert_pos.min(result.sequence.len()), elem);
         }
 
         result.objective = f64::NEG_INFINITY;

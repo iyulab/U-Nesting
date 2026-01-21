@@ -50,9 +50,9 @@ impl Default for BrkgaConfig {
         Self {
             population_size: 100,
             max_generations: 500,
-            elite_fraction: 0.2,     // 20% elite
-            mutant_fraction: 0.15,   // 15% mutants
-            elite_bias: 0.7,         // 70% chance to inherit from elite
+            elite_fraction: 0.2,   // 20% elite
+            mutant_fraction: 0.15, // 15% mutants
+            elite_bias: 0.7,       // 70% chance to inherit from elite
             time_limit: None,
             target_fitness: None,
             stagnation_limit: Some(50),
