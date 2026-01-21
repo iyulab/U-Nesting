@@ -50,6 +50,7 @@ pub mod brkga;
 pub mod error;
 pub mod ga;
 pub mod geometry;
+pub mod memory;
 pub mod placement;
 pub mod result;
 pub mod sa;

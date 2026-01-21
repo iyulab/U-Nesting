@@ -1,0 +1,26 @@
+[package]
+name = "u-nesting-python"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Python bindings for U-Nesting spatial optimization engine"
+keywords = ["nesting", "bin-packing", "python", "pyo3"]
+categories = ["algorithms", "api-bindings"]
+rust-version.workspace = true
+
+[lib]
+name = "u_nesting"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { workspace = true }
+u-nesting-core = { workspace = true, features = ["serde"] }
+u-nesting-d2 = { workspace = true, features = ["serde"] }
+u-nesting-d3 = { workspace = true, features = ["serde"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[features]
+default = []
