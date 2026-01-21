@@ -77,12 +77,18 @@ pub mod extreme_point;
 pub mod ga_packing;
 pub mod geometry;
 pub mod packer;
+pub mod physics;
 pub mod sa_packing;
 pub mod spatial_index;
+pub mod stability;
 
 // Re-exports
 pub use boundary::Boundary3D;
 pub use geometry::Geometry3D;
 pub use packer::Packer3D;
+pub use physics::{PhysicsConfig, PhysicsResult, PhysicsSimulator};
 pub use spatial_index::{Aabb3D, SpatialEntry3D, SpatialIndex3D};
+pub use stability::{
+    PlacedBox, StabilityAnalyzer, StabilityConstraint, StabilityReport, StabilityResult,
+};
 pub use u_nesting_core::{Config, Error, Placement, Result, SolveResult, Solver, Strategy};

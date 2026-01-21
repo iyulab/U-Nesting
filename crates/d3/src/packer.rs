@@ -5,7 +5,10 @@ use crate::brkga_packing::run_brkga_packing;
 use crate::extreme_point::run_ep_packing;
 use crate::ga_packing::run_ga_packing;
 use crate::geometry::Geometry3D;
+use crate::physics::{PhysicsConfig, PhysicsSimulator};
 use crate::sa_packing::run_sa_packing;
+use crate::stability::{PlacedBox, StabilityAnalyzer, StabilityConstraint, StabilityReport};
+use nalgebra::{Point3, Vector3};
 use u_nesting_core::brkga::BrkgaConfig;
 use u_nesting_core::ga::GaConfig;
 use u_nesting_core::geometry::{Boundary, Geometry};
@@ -39,6 +42,72 @@ impl Packer3D {
     /// Creates a packer with default configuration.
     pub fn default_config() -> Self {
         Self::new(Config::default())
+    }
+
+    /// Validates the stability of a packing result.
+    ///
+    /// Analyzes each placement to ensure boxes are properly supported.
+    pub fn validate_stability(
+        &self,
+        result: &SolveResult<f64>,
+        geometries: &[Geometry3D],
+        _boundary: &Boundary3D,
+        constraint: StabilityConstraint,
+    ) -> StabilityReport {
+        // Convert placements to PlacedBox format
+        let placed_boxes = self.placements_to_boxes(result, geometries);
+        let analyzer = StabilityAnalyzer::new(constraint);
+        analyzer.analyze(&placed_boxes, 0.0)
+    }
+
+    /// Validates stability using physics simulation.
+    ///
+    /// Runs a physics simulation to detect boxes that would fall or tip.
+    pub fn validate_stability_physics(
+        &self,
+        result: &SolveResult<f64>,
+        geometries: &[Geometry3D],
+        boundary: &Boundary3D,
+    ) -> StabilityReport {
+        let placed_boxes = self.placements_to_boxes(result, geometries);
+        let container = Vector3::new(boundary.width(), boundary.depth(), boundary.height());
+
+        let config = PhysicsConfig::default().with_max_time(2.0);
+        let simulator = PhysicsSimulator::new(config);
+        simulator.validate_stability(&placed_boxes, container, 0.0)
+    }
+
+    /// Converts placements to PlacedBox format for stability analysis.
+    fn placements_to_boxes(
+        &self,
+        result: &SolveResult<f64>,
+        geometries: &[Geometry3D],
+    ) -> Vec<PlacedBox> {
+        let geom_map: std::collections::HashMap<&str, &Geometry3D> =
+            geometries.iter().map(|g| (g.id().as_str(), g)).collect();
+
+        result
+            .placements
+            .iter()
+            .filter_map(|p| {
+                let geom = geom_map.get(p.geometry_id.as_str())?;
+                let ori_idx = p.rotation_index.unwrap_or(0);
+                let dims = geom.dimensions_for_orientation(ori_idx);
+
+                let mut placed = PlacedBox::new(
+                    p.geometry_id.clone(),
+                    p.instance,
+                    Point3::new(p.position[0], p.position[1], p.position[2]),
+                    dims,
+                );
+
+                if let Some(mass) = geom.mass() {
+                    placed = placed.with_mass(mass);
+                }
+
+                Some(placed)
+            })
+            .collect()
     }
 
     /// Simple layer-based packing algorithm.
