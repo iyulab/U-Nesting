@@ -7,11 +7,40 @@
 //!
 //! ## Core Components
 //!
-//! - **Geometry traits**: `Geometry`, `Geometry2DExt`, `Geometry3DExt`
-//! - **Boundary traits**: `Boundary`, `Boundary2DExt`, `Boundary3DExt`
-//! - **Solver trait**: Common interface for all optimization algorithms
-//! - **GA framework**: Genetic algorithm infrastructure for metaheuristic optimization
-//! - **Transform types**: 2D/3D coordinate transformations and AABBs
+//! - **Geometry traits**: [`Geometry`], [`Geometry2DExt`], [`Geometry3DExt`]
+//! - **Boundary traits**: [`Boundary`], [`Boundary2DExt`], [`Boundary3DExt`]
+//! - **Solver trait**: [`Solver`] - Common interface for all optimization algorithms
+//! - **GA framework**: [`GaRunner`], [`GaProblem`] - Genetic algorithm infrastructure
+//! - **BRKGA framework**: [`BrkgaRunner`], [`BrkgaProblem`] - Biased Random-Key GA
+//! - **SA framework**: [`SaRunner`], [`SaProblem`] - Simulated Annealing
+//! - **Transform types**: [`Transform2D`], [`Transform3D`], [`AABB2D`], [`AABB3D`]
+//!
+//! ## Optimization Strategies
+//!
+//! The [`Strategy`] enum defines available optimization algorithms:
+//!
+//! | Strategy | Speed | Quality | Description |
+//! |----------|-------|---------|-------------|
+//! | `BottomLeftFill` | Fast | Basic | Greedy bottom-left placement |
+//! | `NfpGuided` | Medium | Good | NFP-based optimal positioning (2D) |
+//! | `GeneticAlgorithm` | Slow | High | GA with permutation encoding |
+//! | `Brkga` | Medium | High | Biased Random-Key GA |
+//! | `SimulatedAnnealing` | Medium | High | Temperature-based optimization |
+//! | `ExtremePoint` | Fast | Good | EP heuristic (3D only) |
+//!
+//! ## Configuration
+//!
+//! Use [`Config`] to configure solver behavior:
+//!
+//! ```rust
+//! use u_nesting_core::{Config, Strategy};
+//!
+//! let config = Config::new()
+//!     .with_strategy(Strategy::GeneticAlgorithm)
+//!     .with_spacing(2.0)
+//!     .with_margin(5.0)
+//!     .with_time_limit(30000);
+//! ```
 //!
 //! ## Feature Flags
 //!

@@ -20,8 +20,8 @@ pub struct Placement<S> {
     pub position: Vec<S>,
 
     /// Rotation angle(s) in radians.
-    /// - 2D: single angle [θ]
-    /// - 3D: Euler angles [rx, ry, rz] or quaternion components
+    /// - 2D: single angle `[θ]`
+    /// - 3D: Euler angles `[rx, ry, rz]` or quaternion components
     pub rotation: Vec<S>,
 
     /// Index of the boundary this geometry is placed in (for multi-bin scenarios).
