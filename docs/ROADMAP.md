@@ -1185,7 +1185,7 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 - [x] 24개 sliding 테스트 + 9개 NfpMethod 테스트
 - [ ] 벤치마크: ESICUP 인스턴스에서 품질 비교 (향후)
 
-### Phase 7.3: GDRR Implementation (1주)
+### Phase 7.3: GDRR Implementation (1주) ✅ 완료
 
 #### 목표
 - Goal-Driven Ruin and Recreate (GDRR) 알고리즘 구현
@@ -1193,34 +1193,35 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 
 #### 태스크
 
-##### 7.3.1 Ruin Operator 구현 (2일)
-- [ ] Random ruin (무작위 아이템 제거)
-- [ ] Cluster ruin (인접 아이템 그룹 제거)
-- [ ] Worst ruin (가장 나쁜 배치 제거)
-- [ ] `RuinOperator` trait 정의
+##### 7.3.1 Ruin Operator 구현 (2일) ✅
+- [x] Random ruin (무작위 아이템 제거) - `ruin_random()`
+- [x] Cluster ruin (인접 아이템 그룹 제거) - `ruin_cluster()`
+- [x] Worst ruin (가장 나쁜 배치 제거) - `ruin_worst()`
+- [x] `RuinType` enum 및 `RuinResult` struct 정의
 
-##### 7.3.2 Recreate Operator 구현 (2일)
-- [ ] Best-fit recreate
-- [ ] BLF-based recreate
-- [ ] NFP-guided recreate
-- [ ] `RecreateOperator` trait 정의
+##### 7.3.2 Recreate Operator 구현 (2일) ✅
+- [x] Best-fit recreate - `recreate_best_fit()`
+- [x] BLF-based recreate - `recreate_blf()`
+- [x] NFP-guided recreate - `recreate_nfp()`
+- [x] `RecreateType` enum 및 `RecreateResult` struct 정의
 
-##### 7.3.3 Goal-Driven Mechanism (1일)
-- [ ] Decreasing bin area limit 메커니즘
-- [ ] Late Acceptance Hill-Climbing (LAHC) 통합
-- [ ] Goal 도달 실패 시 restart 로직
+##### 7.3.3 Goal-Driven Mechanism (1일) ✅
+- [x] Decreasing bin area limit 메커니즘 - `goal_decrease_rate`
+- [x] Late Acceptance Hill-Climbing (LAHC) 통합 - `lahc_list`
+- [x] Stagnation detection 및 goal adjustment
 
-##### 7.3.4 GDRR Runner (1일)
-- [ ] `GdrrConfig` 구조체 (max_iterations, ruin_percentage, etc.)
-- [ ] `GdrrRunner` 메인 루프 구현
-- [ ] Progress callback 지원
-- [ ] 참조: Gardeyn & Wauters (EJOR 2022)
+##### 7.3.4 GDRR Runner (1일) ✅
+- [x] `GdrrConfig` 구조체 (max_iterations, ruin_ratio, lahc_list_length, etc.)
+- [x] `GdrrRunner` 메인 루프 구현
+- [x] `GdrrSolution`, `GdrrProblem` traits 정의
+- [x] Progress callback 지원 via `GdrrProgress`
+- [x] 참조: Gardeyn & Wauters (EJOR 2022)
 
 #### 산출물
-- [ ] `core/gdrr.rs` - GDRR framework
-- [ ] `d2/gdrr_nesting.rs` - 2D nesting GDRR 적용
-- [ ] `Strategy::Gdrr` 추가
-- [ ] 벤치마크: BRKGA, SA 대비 성능 비교
+- [x] `core/gdrr.rs` - GDRR framework (10개 테스트)
+- [x] `d2/gdrr_nesting.rs` - 2D nesting GDRR 적용 (9개 테스트)
+- [x] `Strategy::Gdrr` 추가 in `core/solver.rs`
+- [ ] 벤치마크: BRKGA, SA 대비 성능 비교 (향후)
 
 ### Phase 7.4: ALNS Implementation (1주)
 
@@ -1259,7 +1260,7 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 |-----------|------|-------------|------|
 | 7.1 Numerical Robustness | 1주 | `core/robust.rs`, Shewchuk predicates | ✅ 완료 |
 | 7.2 NFP Improvement | 1.5주 | `d2/nfp_sliding.rs`, Burke algorithm | ⬜ 대기 |
-| 7.3 GDRR | 1주 | `core/gdrr.rs`, State-of-the-art metaheuristic | ⬜ 대기 |
+| 7.3 GDRR | 1주 | `core/gdrr.rs`, State-of-the-art metaheuristic | ✅ 완료 |
 | 7.4 ALNS | 1주 | `core/alns.rs`, Adaptive operator selection | ⬜ 대기 |
 
 ---

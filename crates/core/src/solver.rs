@@ -24,6 +24,8 @@ pub enum Strategy {
     SimulatedAnnealing,
     /// Extreme Point heuristic (3D only).
     ExtremePoint,
+    /// Goal-Driven Ruin and Recreate (GDRR).
+    Gdrr,
 }
 
 /// Common configuration for solvers.

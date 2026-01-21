@@ -141,6 +141,7 @@ fn edge_vector(polygon: &[(f64, f64)], i: usize) -> (f64, f64) {
 
 /// Returns the outward normal of an edge (assuming CCW polygon).
 #[inline]
+#[allow(dead_code)]
 fn edge_normal(polygon: &[(f64, f64)], i: usize) -> (f64, f64) {
     let (dx, dy) = edge_vector(polygon, i);
     let len = (dx * dx + dy * dy).sqrt();
@@ -239,8 +240,7 @@ pub fn find_contacts(
     let n_orb = orbiting.len();
 
     // Check vertex-edge contacts (orbiting vertex on stationary edge)
-    for orb_idx in 0..n_orb {
-        let orb_vertex = orbiting[orb_idx];
+    for (orb_idx, &orb_vertex) in orbiting.iter().enumerate() {
         for stat_edge_idx in 0..n_stat {
             let stat_p1 = stationary[stat_edge_idx];
             let stat_p2 = stationary[(stat_edge_idx + 1) % n_stat];
@@ -256,8 +256,7 @@ pub fn find_contacts(
     }
 
     // Check edge-vertex contacts (stationary vertex on orbiting edge)
-    for stat_idx in 0..n_stat {
-        let stat_vertex = stationary[stat_idx];
+    for (stat_idx, &stat_vertex) in stationary.iter().enumerate() {
         for orb_edge_idx in 0..n_orb {
             let orb_p1 = orbiting[orb_edge_idx];
             let orb_p2 = orbiting[(orb_edge_idx + 1) % n_orb];
@@ -504,9 +503,7 @@ pub fn check_translation_collision(
     let mut first_collision: Option<CollisionEvent> = None;
 
     // Check orbiting vertices against stationary edges
-    for orb_idx in 0..n_orb {
-        let orb_v = orbiting[orb_idx];
-
+    for (orb_idx, &orb_v) in orbiting.iter().enumerate() {
         for stat_edge_idx in 0..n_stat {
             let stat_p1 = stationary[stat_edge_idx];
             let stat_p2 = stationary[(stat_edge_idx + 1) % n_stat];
@@ -514,25 +511,24 @@ pub fn check_translation_collision(
             if let Some(dist) =
                 ray_segment_intersection(orb_v, trans_dir, stat_p1, stat_p2, tolerance)
             {
-                if dist > tolerance && dist < trans_len - tolerance {
-                    if first_collision.is_none() || dist < first_collision.as_ref().unwrap().distance
-                    {
-                        first_collision = Some(CollisionEvent {
-                            distance: dist,
-                            contact_type: ContactType::VertexEdge,
-                            stationary_idx: stat_edge_idx,
-                            orbiting_idx: orb_idx,
-                        });
-                    }
+                if dist > tolerance
+                    && dist < trans_len - tolerance
+                    && (first_collision.is_none()
+                        || dist < first_collision.as_ref().unwrap().distance)
+                {
+                    first_collision = Some(CollisionEvent {
+                        distance: dist,
+                        contact_type: ContactType::VertexEdge,
+                        stationary_idx: stat_edge_idx,
+                        orbiting_idx: orb_idx,
+                    });
                 }
             }
         }
     }
 
     // Check stationary vertices against moving orbiting edges
-    for stat_idx in 0..n_stat {
-        let stat_v = stationary[stat_idx];
-
+    for (stat_idx, &stat_v) in stationary.iter().enumerate() {
         for orb_edge_idx in 0..n_orb {
             let orb_p1 = orbiting[orb_edge_idx];
             let orb_p2 = orbiting[(orb_edge_idx + 1) % n_orb];
@@ -543,16 +539,17 @@ pub fn check_translation_collision(
             if let Some(dist) =
                 ray_segment_intersection(stat_v, neg_dir, orb_p1, orb_p2, tolerance)
             {
-                if dist > tolerance && dist < trans_len - tolerance {
-                    if first_collision.is_none() || dist < first_collision.as_ref().unwrap().distance
-                    {
-                        first_collision = Some(CollisionEvent {
-                            distance: dist,
-                            contact_type: ContactType::EdgeVertex,
-                            stationary_idx: stat_idx,
-                            orbiting_idx: orb_edge_idx,
-                        });
-                    }
+                if dist > tolerance
+                    && dist < trans_len - tolerance
+                    && (first_collision.is_none()
+                        || dist < first_collision.as_ref().unwrap().distance)
+                {
+                    first_collision = Some(CollisionEvent {
+                        distance: dist,
+                        contact_type: ContactType::EdgeVertex,
+                        stationary_idx: stat_idx,
+                        orbiting_idx: orb_edge_idx,
+                    });
                 }
             }
         }

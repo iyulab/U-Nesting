@@ -49,6 +49,7 @@
 pub mod brkga;
 pub mod error;
 pub mod ga;
+pub mod gdrr;
 pub mod geometry;
 pub mod memory;
 pub mod placement;
@@ -73,6 +74,10 @@ pub use result::{SolveResult, SolveSummary};
 pub use sa::{
     CoolingSchedule, NeighborhoodOperator, PermutationSolution, SaConfig, SaProblem, SaResult,
     SaRunner, SaSolution,
+};
+pub use gdrr::{
+    GdrrConfig, GdrrProblem, GdrrProgress, GdrrResult, GdrrRunner, GdrrSolution,
+    RecreateResult, RecreateType, RuinResult, RuinType, RuinedItem,
 };
 pub use solver::{Config, ProgressCallback, ProgressInfo, Solver, Strategy};
 pub use transform::{Transform2D, Transform3D, AABB2D, AABB3D};

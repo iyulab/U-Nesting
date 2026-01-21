@@ -823,7 +823,6 @@ fn union_polygons(polygons: &[Vec<(f64, f64)>]) -> Result<Nfp> {
     Ok(Nfp::from_polygons(nfp_polygons))
 }
 
-/// Computes Minkowski sum for general (non-convex) polygons.
 // ============================================================================
 // Helper functions
 // ============================================================================
@@ -1081,7 +1080,7 @@ fn point_on_polygon_boundary(point: (f64, f64), polygon: &[(f64, f64)]) -> bool 
         let t = ((px - x1) * dx + (py - y1) * dy) / len_sq;
 
         // Check if projection is within segment
-        if t >= -EPS && t <= 1.0 + EPS {
+        if (-EPS..=1.0 + EPS).contains(&t) {
             // Check distance from line
             let proj_x = x1 + t * dx;
             let proj_y = y1 + t * dy;
