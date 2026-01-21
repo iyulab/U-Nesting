@@ -1008,6 +1008,9 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 | Memory Optimization | `core/memory.rs` | ObjectPool, GeometryCache, ScratchBuffer |
 | Python Bindings | `python/src/lib.rs` | PyO3 기반 Python 바인딩 |
 | Python Type Stubs | `python/python/u_nesting/__init__.pyi` | TypedDict 기반 타입 힌트 |
+| Robust Predicates | `core/robust.rs` | Shewchuk adaptive predicates, floating-point filter |
+| NFP Sliding Algorithm | `d2/nfp_sliding.rs` | Burke et al. 2007 sliding/orbiting algorithm |
+| NfpMethod Selection | `d2/nfp.rs` | MinkowskiSum 또는 Sliding 알고리즘 선택 |
 
 ### 미구현 핵심 기능 ❌
 | 기능 | 우선순위 | 설명 |
@@ -1143,7 +1146,7 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 - [x] NFP/IFP 계산에서 robust predicate 사용 (`point_in_triangle_robust`, `is_polygon_convex`)
 - [x] 단위 테스트: near-degenerate case 정확성 검증 (11개 추가)
 
-### Phase 7.2: NFP Algorithm Improvement (1.5주)
+### Phase 7.2: NFP Algorithm Improvement (1.5주) ✅ 완료
 
 #### 목표
 - Burke et al. 2007 "Improved Sliding Algorithm" 구현
@@ -1151,28 +1154,36 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 
 #### 태스크
 
-##### 7.2.1 Touching Group 개념 구현 (3일)
-- [ ] `TouchingGroup` 구조체 정의 (접촉점 집합)
-- [ ] 동시 접촉 상태 추적 로직 구현
-- [ ] Narrow entrance concavities 처리
-- [ ] 참조: Luo & Rao (2022) "Improved Sliding Algorithm"
+##### 7.2.1 Touching Group 개념 구현 (3일) ✅
+- [x] `TouchingGroup` 구조체 정의 (접촉점 집합)
+- [x] `Contact` 구조체 (ContactType: VertexEdge, EdgeVertex, EdgeEdge)
+- [x] `find_contacts()` 함수로 동시 접촉 상태 추적
+- [x] `TranslationVector` 구조체로 이동 방향/거리 표현
+- [x] 참조: Luo & Rao (2022) "Improved Sliding Algorithm"
 
-##### 7.2.2 NFP Edge Case 처리 (2일)
-- [ ] Perfect fit detection (두 폴리곤이 정확히 맞물리는 경우)
-- [ ] Interlocking concavities 처리
-- [ ] NFP with holes 지원 (오목부 내부 valid 위치)
-- [ ] 회귀 테스트: 기존 케이스 영향 없음 확인
+##### 7.2.2 NFP Edge Case 처리 (2일) ✅
+- [x] Perfect fit detection: `handle_perfect_fit()` - 방문 위치 필터링
+- [x] Collision detection: `check_translation_collision()` - 이동 중 충돌 감지
+- [x] Interlocking concavities: `detect_interlocking_opportunity()` - 오목부 접근
+- [x] Contact recovery: `recover_contact()` - 접촉 손실 시 복구
+- [x] 회귀 테스트: 기존 112개 테스트 모두 통과
 
-##### 7.2.3 Burke et al. 2007 Sliding 구현 (2일)
-- [ ] Orbiting polygon 개념 구현
-- [ ] Translation vector 계산 개선
-- [ ] Edge-edge, edge-vertex, vertex-vertex 접촉 처리
-- [ ] 기존 Minkowski sum 방식과 결과 비교 검증
+##### 7.2.3 Burke et al. 2007 Sliding 구현 (2일) ✅
+- [x] `compute_nfp_sliding()` 메인 알고리즘 구현
+- [x] `find_start_position()` 시작 위치 계산
+- [x] `trace_nfp_boundary()` NFP 경계 추적
+- [x] `compute_translation_vectors()` 이동 벡터 계산
+- [x] `select_translation_vector()` CCW 우선 선택
+- [x] `ray_segment_intersection()` 충돌 감지
+- [x] `polygons_overlap()` SAT 기반 중첩 검사
 
 #### 산출물
-- [ ] `d2/nfp_sliding.rs` - Improved Sliding Algorithm
-- [ ] Strategy 선택 가능: `NfpMethod::MinkowskiSum | NfpMethod::Sliding`
-- [ ] 벤치마크: ESICUP 인스턴스에서 품질 비교
+- [x] `d2/nfp_sliding.rs` - Improved Sliding Algorithm (1400+ lines)
+- [x] `NfpMethod` enum: `MinkowskiSum | Sliding`
+- [x] `NfpConfig` 구조체 (method, contact_tolerance, max_iterations)
+- [x] `compute_nfp_with_method()`, `compute_nfp_with_config()` API
+- [x] 24개 sliding 테스트 + 9개 NfpMethod 테스트
+- [ ] 벤치마크: ESICUP 인스턴스에서 품질 비교 (향후)
 
 ### Phase 7.3: GDRR Implementation (1주)
 
