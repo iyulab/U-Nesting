@@ -9,7 +9,7 @@ use u_nesting_core::Strategy;
 /// Placement info for JSON output.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlacementInfo {
-    pub geometry_id: usize,
+    pub geometry_id: String,
     pub position: [f64; 2],
     pub rotation: f64,
 }

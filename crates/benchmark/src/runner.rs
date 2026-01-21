@@ -154,13 +154,25 @@ impl BenchmarkRunner {
                         // Calculate actual strip length (max x of all placements)
                         let strip_length = self.calculate_strip_length(&solve_result, &geometries);
 
-                        // Convert placements to PlacementInfo for JSON output
+                        // Find min coordinates for normalization
+                        let min_x = solve_result
+                            .placements
+                            .iter()
+                            .map(|p| p.position[0])
+                            .fold(f64::INFINITY, f64::min);
+                        let min_y = solve_result
+                            .placements
+                            .iter()
+                            .map(|p| p.position[1])
+                            .fold(f64::INFINITY, f64::min);
+
+                        // Convert placements to PlacementInfo with normalized coordinates
                         let placement_infos: Vec<crate::result::PlacementInfo> = solve_result
                             .placements
                             .iter()
                             .map(|p| crate::result::PlacementInfo {
-                                geometry_id: p.geometry_id.parse().unwrap_or(0),
-                                position: [p.position[0], p.position[1]],
+                                geometry_id: p.geometry_id.clone(),
+                                position: [p.position[0] - min_x, p.position[1] - min_y],
                                 rotation: p.rotation.first().copied().unwrap_or(0.0),
                             })
                             .collect();
@@ -292,14 +304,15 @@ impl BenchmarkRunner {
             .map(|(i, g)| (g.id().as_str(), i))
             .collect();
 
-        let mut max_x = 0.0_f64;
+        let mut max_x = f64::NEG_INFINITY;
+        let mut min_x = f64::INFINITY;
 
         for placement in &result.placements {
             if let Some(&geom_idx) = id_to_idx.get(placement.geometry_id.as_str()) {
                 let geom = &geometries[geom_idx];
-                let (min, max) = geom.aabb();
-                let width = max[0] - min[0];
-                let height = max[1] - min[1];
+                let (geom_min, geom_max) = geom.aabb();
+                let width = geom_max[0] - geom_min[0];
+                let height = geom_max[1] - geom_min[1];
 
                 // Get rotation angle from the placement
                 let rotation_angle = placement.rotation.first().copied().unwrap_or(0.0);
@@ -313,12 +326,19 @@ impl BenchmarkRunner {
                     (width, height)
                 };
 
+                let left_edge = placement.position[0];
                 let right_edge = placement.position[0] + w;
+                min_x = min_x.min(left_edge);
                 max_x = max_x.max(right_edge);
             }
         }
 
-        max_x
+        // Strip length is the total width occupied (max - min)
+        if max_x > f64::NEG_INFINITY && min_x < f64::INFINITY {
+            max_x - min_x
+        } else {
+            0.0
+        }
     }
 }
 
