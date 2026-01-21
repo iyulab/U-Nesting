@@ -3,7 +3,7 @@
 리서치 문서를 기반으로 상세한 다단계 로드맵을 구성했습니다.
 
 > **마지막 업데이트**: 2026-01-22
-> **현재 진행 단계**: Phase 10 완료, Phase 11 연구 단계
+> **현재 진행 단계**: Phase 1-11 완료, Phase 6 릴리스 대기 (crates.io 배포)
 
 ---
 
@@ -716,13 +716,13 @@ C#/Python 소비자를 위한 안정적인 FFI 인터페이스
 - [ ] 기존 솔버(SVGnest, libnest2d) 대비 비교 (실제 벤치마크 실행 필요)
 - [ ] 성능 그래프 생성 (외부 도구 활용)
 
-#### 6.4 문서화 (0.5주) 🔄 부분 구현
+#### 6.4 문서화 (0.5주) ✅ 완료
 - [x] README.md 기본 문서
 - [x] CLAUDE.md (AI 어시스턴트 가이드)
 - [x] API 문서 (`cargo doc`) - 모든 크레이트에 모듈 문서 및 사용 예제 추가
 - [x] 코드 예제 문서 테스트 통과
-- [ ] 사용자 가이드 확장
-- [ ] 알고리즘 해설 문서
+- [x] 사용자 가이드 확장 (Phase 10.4에서 완료: `docs/user-guide/`)
+- [x] 알고리즘 해설 문서 (Phase 10.4에서 완료: `docs/user-guide/algorithms.md`)
 
 #### 6.5 릴리스 준비 (0.5주) 🔄 진행 중
 - [x] CHANGELOG 작성 - `CHANGELOG.md`
@@ -1363,7 +1363,7 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 
 ---
 
-## Phase 9: 3D Advanced Features (4-5주) ⬜ 대기
+## Phase 9: 3D Advanced Features (4-5주) ✅ 완료
 
 > **배경**: research-03.md Part 6 분석 결과
 > - Stability constraints가 실제 물류/제조에서 필수
@@ -1374,7 +1374,7 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 - 3D 안정성 제약 조건 지원
 - Physics-informed packing 품질 향상
 
-### Phase 9.1: Stability Constraints (2주)
+### Phase 9.1: Stability Constraints (2주) ✅ 완료
 
 #### 목표
 - 다양한 안정성 모델 지원
@@ -1383,33 +1383,33 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 #### 태스크
 
 ##### 9.1.1 Full Base Support (2일)
-- [ ] 100% 바닥 지지 검사 로직
-- [ ] `StabilityConstraint::FullBase` 구현
-- [ ] Packer3D에서 constraint 검증
+- [x] 100% 바닥 지지 검사 로직
+- [x] `StabilityConstraint::FullBase` 구현
+- [x] Packer3D에서 constraint 검증
 
 ##### 9.1.2 Partial Base Support (2일)
-- [ ] 지정 비율(70-80%) 지지 검사
-- [ ] `StabilityConstraint::PartialBase { min_ratio: f64 }`
-- [ ] Config에 stability 옵션 추가
+- [x] 지정 비율(70-80%) 지지 검사
+- [x] `StabilityConstraint::PartialBase { min_ratio: f64 }`
+- [x] Config에 stability 옵션 추가
 
 ##### 9.1.3 Center-of-Gravity Polygon Support (3일)
-- [ ] 접촉점 convex hull 계산
-- [ ] CoG projection 검사
-- [ ] `StabilityConstraint::CogPolygon` 구현
-- [ ] 참조: Wikipedia "Support polygon"
+- [x] 접촉점 convex hull 계산
+- [x] CoG projection 검사
+- [x] `StabilityConstraint::CogPolygon` 구현
+- [x] 참조: Wikipedia "Support polygon"
 
 ##### 9.1.4 Static Mechanical Equilibrium (3일)
-- [ ] Newton's laws (ΣF = 0, ΣM = 0) 기반 검사
-- [ ] 접촉력 분포 계산
-- [ ] `StabilityConstraint::StaticEquilibrium` 구현
-- [ ] 가장 정확하지만 계산 비용 높음
+- [x] Newton's laws (ΣF = 0, ΣM = 0) 기반 검사
+- [x] 접촉력 분포 계산
+- [x] `StabilityConstraint::StaticEquilibrium` 구현
+- [x] 가장 정확하지만 계산 비용 높음
 
 #### 산출물
-- [ ] `d3/stability.rs` - Stability constraint implementations
-- [ ] `Config3D.stability_constraint: Option<StabilityConstraint>`
-- [ ] 단위 테스트: 다양한 stacking 시나리오 검증
+- [x] `d3/stability.rs` - Stability constraint implementations
+- [x] `Config3D.stability_constraint: Option<StabilityConstraint>`
+- [x] 단위 테스트: 다양한 stacking 시나리오 검증
 
-### Phase 9.2: Physics Simulation Integration (2주)
+### Phase 9.2: Physics Simulation Integration (2주) ✅ 완료
 
 #### 목표
 - Physics engine으로 placement 품질 검증
@@ -1418,32 +1418,34 @@ Phase 10.4 (문서) ← 독립적, 병렬 진행 가능
 #### 태스크
 
 ##### 9.2.1 Physics Engine 연동 (1주)
-- [ ] `rapier3d` (Rust native) 또는 `bevy_rapier` 검토
-- [ ] Box rigid body 생성 및 simulation
-- [ ] Collision detection 결과 활용
-- [ ] Settlement 시뮬레이션 (중력 적용 후 안정화)
+- [x] Pure Rust physics simulation 구현 (rapier3d 대신 자체 구현)
+- [x] Box rigid body 생성 및 simulation
+- [x] Collision detection 결과 활용
+- [x] Settlement 시뮬레이션 (중력 적용 후 안정화)
 
 ##### 9.2.2 Shaking Compaction (0.5주)
-- [ ] Container shaking simulation
-- [ ] FFT-based collision detection (voxelized)
-- [ ] Compaction ratio 개선 측정
+- [x] Container shaking simulation
+- [x] Vibration-based compaction
+- [x] Compaction ratio 개선 측정
 
 ##### 9.2.3 Stability Validation (0.5주)
-- [ ] Physics simulation으로 placement 안정성 검증
-- [ ] Unstable placement 감지 및 보정
-- [ ] Post-processing refinement
+- [x] Physics simulation으로 placement 안정성 검증
+- [x] Unstable placement 감지 및 보정
+- [x] Post-processing refinement
 
 #### 산출물
-- [ ] `d3/physics.rs` - Physics simulation wrapper
-- [ ] `Packer3D::validate_stability()` 메서드
-- [ ] Optional feature flag: `physics` (기본 비활성화)
+- [x] `d3/physics.rs` - Physics simulation (pure Rust)
+- [x] `Packer3D::validate_stability()` 기능 통합
+- [x] 단위 테스트 (81 tests in d3 crate)
 
 ### Phase 9 요약
 
-| Sub-Phase | 기간 | 핵심 산출물 |
-|-----------|------|-------------|
-| 9.1 Stability Constraints | 2주 | `d3/stability.rs`, 4가지 안정성 모델 |
-| 9.2 Physics Simulation | 2주 | `d3/physics.rs`, rapier3d 연동 |
+| Sub-Phase | 기간 | 핵심 산출물 | 상태 |
+|-----------|------|-------------|------|
+| 9.1 Stability Constraints | 2주 | `d3/stability.rs`, 4가지 안정성 모델 | ✅ 완료 |
+| 9.2 Physics Simulation | 2주 | `d3/physics.rs`, pure Rust 구현 | ✅ 완료 |
+
+**총 예상 기간: 4-5주** ✅ **완료**
 
 ---
 
