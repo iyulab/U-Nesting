@@ -5,10 +5,11 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+readme = "../../README.md"
 description = "C FFI interface for U-Nesting spatial optimization engine"
 keywords = ["ffi", "nesting", "bin-packing"]
 categories = ["api-bindings"]
-include = ["src/**/*", "Cargo.toml", "cbindgen.toml", "include/**/*"]
+include = ["src/**/*", "Cargo.toml", "cbindgen.toml", "include/**/*", "../../README.md"]
 
 [lib]
 crate-type = ["cdylib", "staticlib"]

@@ -5,6 +5,7 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+readme = "../../README.md"
 description = "3D bin packing algorithms for U-Nesting spatial optimization engine"
 keywords = ["bin-packing", "3d", "optimization", "geometry"]
 categories = ["algorithms", "mathematics"]

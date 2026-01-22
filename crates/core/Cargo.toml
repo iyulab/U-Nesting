@@ -5,6 +5,7 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+readme = "../../README.md"
 description = "Core traits and abstractions for U-Nesting spatial optimization engine"
 keywords = ["nesting", "bin-packing", "optimization", "geometry"]
 categories = ["algorithms", "mathematics"]

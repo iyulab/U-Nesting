@@ -1,0 +1,22 @@
+[package]
+name = "u-nesting"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+description = "Domain-agnostic 2D/3D spatial optimization engine - nesting and bin packing"
+keywords = ["nesting", "bin-packing", "optimization", "geometry", "2d", "3d"]
+categories = ["algorithms", "mathematics"]
+
+[dependencies]
+u-nesting-core = { workspace = true }
+u-nesting-d2 = { workspace = true, optional = true }
+u-nesting-d3 = { workspace = true, optional = true }
+
+[features]
+default = ["d2", "d3"]
+d2 = ["dep:u-nesting-d2"]
+d3 = ["dep:u-nesting-d3"]
+serde = ["u-nesting-core/serde", "u-nesting-d2?/serde", "u-nesting-d3?/serde"]

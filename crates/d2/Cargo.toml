@@ -5,6 +5,7 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+readme = "../../README.md"
 description = "2D nesting algorithms for U-Nesting spatial optimization engine"
 keywords = ["nesting", "polygon", "2d", "nfp", "optimization"]
 categories = ["algorithms", "mathematics"]

@@ -5,6 +5,7 @@ members = [
     "crates/d2",
     "crates/d3",
     "crates/ffi",
+    "crates/u-nesting",
     "crates/benchmark",
     "crates/python",
 ]
@@ -68,6 +69,7 @@ u-nesting-core = { version = "0.1.0", path = "crates/core" }
 u-nesting-d2 = { version = "0.1.0", path = "crates/d2" }
 u-nesting-d3 = { version = "0.1.0", path = "crates/d3" }
 u-nesting-ffi = { version = "0.1.0", path = "crates/ffi" }
+u-nesting = { version = "0.1.0", path = "crates/u-nesting" }
 
 [profile.release]
 lto = true
