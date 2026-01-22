@@ -65,19 +65,19 @@ A test dataset with **9 different polygon shapes** and **50 total pieces** on a 
 
 ### Algorithm Comparison
 
-Optimization results using different algorithms on the same dataset (100 pieces, strip height 200):
+Optimization results using different algorithms on the same dataset (50 pieces, 500×500 boundary, 2 strips):
 
-| Algorithm | Result | Time | Strip Length |
-|-----------|--------|------|--------------|
-| **BLF** (Bottom-Left Fill) | <img src="assets/BLF.png" alt="BLF Result" width="300"> | <1ms | 325.6 |
-| **NFP** (No-Fit Polygon Guided) | <img src="assets/NFP.png" alt="NFP Result" width="300"> | 10.5s | 350.1 |
-| **GA** (Genetic Algorithm) | <img src="assets/GA.png" alt="GA Result" width="300"> | 12.6s | 166.3 |
-| **BRKGA** (Biased Random-Key GA) | <img src="assets/BRKGA.png" alt="BRKGA Result" width="300"> | 15.6s | 688.6 |
-| **SA** (Simulated Annealing) | <img src="assets/SA.png" alt="SA Result" width="300"> | 62.5s | 175.6 |
-| **GDRR** (Goal-Driven Ruin & Recreate) | <img src="assets/GDRR.png" alt="GDRR Result" width="300"> | 5.0s | 160.3 |
-| **ALNS** (Adaptive Large Neighborhood Search) | <img src="assets/ALNS.png" alt="ALNS Result" width="300"> | 5.0s | 160.3 |
+| Algorithm | Result | Utilization | Time |
+|-----------|--------|-------------|------|
+| **GA** (Genetic Algorithm) | <img src="assets/GA.png" alt="GA Result" width="300"> | **70.6%** | 19.5s |
+| **GDRR** (Goal-Driven Ruin & Recreate) | <img src="assets/GDRR.png" alt="GDRR Result" width="300"> | 69.4% | 30.5s |
+| **ALNS** (Adaptive Large Neighborhood Search) | <img src="assets/ALNS.png" alt="ALNS Result" width="300"> | 69.1% | 30.2s |
+| **NFP** (No-Fit Polygon Guided) | <img src="assets/NFP.png" alt="NFP Result" width="300"> | 68.5% | 5.0s |
+| **BRKGA** (Biased Random-Key GA) | <img src="assets/BRKGA.png" alt="BRKGA Result" width="300"> | 67.8% | 23.5s |
+| **SA** (Simulated Annealing) | <img src="assets/SA.png" alt="SA Result" width="300"> | 64.1% | 34.3s |
+| **BLF** (Bottom-Left Fill) | <img src="assets/BLF.png" alt="BLF Result" width="300"> | 60.0% | 338ms |
 
-> **Note**: Lower strip length = better packing efficiency. GA, SA, GDRR, ALNS show best results. BLF is fastest but least efficient.
+> **Note**: Higher utilization = better packing efficiency. GA achieves best quality (70.6%), NFP offers best speed/quality balance (68.5% in 5s), BLF is fastest but least efficient (60%).
 
 ## Installation
 
