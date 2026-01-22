@@ -184,10 +184,15 @@ impl Nester2D {
                     let origin_y = place_y - g_min[1];
 
                     // Compute valid position bounds and clamp to ensure geometry stays within boundary
+                    // The position represents the geometry's origin (where local (0,0) is placed).
+                    // For geometries with g_min > 0, the leftmost point is at origin + g_min.
+                    // To ensure the origin position is >= boundary min (important for multi-strip
+                    // scenarios where viewers determine strip by origin position), we use
+                    // max(calculated_min, boundary_min) for the minimum valid position.
                     let (g_min_rot, g_max_rot) = geom.aabb_at_rotation(rotation);
-                    let min_valid_x = b_min[0] + margin - g_min_rot[0];
+                    let min_valid_x = (b_min[0] + margin - g_min_rot[0]).max(b_min[0] + margin);
                     let max_valid_x = b_max[0] - margin - g_max_rot[0];
-                    let min_valid_y = b_min[1] + margin - g_min_rot[1];
+                    let min_valid_y = (b_min[1] + margin - g_min_rot[1]).max(b_min[1] + margin);
                     let max_valid_y = b_max[1] - margin - g_max_rot[1];
 
                     let clamped_x = origin_x.clamp(min_valid_x, max_valid_x);
@@ -347,11 +352,12 @@ impl Nester2D {
                 // Place the geometry at the best position found
                 if let Some((x, y, rotation)) = best_placement {
                     // Compute valid position bounds and clamp to ensure geometry stays within boundary
+                    // Ensure origin position >= boundary min for multi-strip compatibility
                     let (b_min, b_max) = boundary.aabb();
                     let (g_min, g_max) = geom.aabb_at_rotation(rotation);
-                    let min_valid_x = b_min[0] + margin - g_min[0];
+                    let min_valid_x = (b_min[0] + margin - g_min[0]).max(b_min[0] + margin);
                     let max_valid_x = b_max[0] - margin - g_max[0];
-                    let min_valid_y = b_min[1] + margin - g_min[1];
+                    let min_valid_y = (b_min[1] + margin - g_min[1]).max(b_min[1] + margin);
                     let max_valid_y = b_max[1] - margin - g_max[1];
 
                     let clamped_x = x.clamp(min_valid_x, max_valid_x);
@@ -811,10 +817,11 @@ impl Nester2D {
                     let origin_y = place_y - g_min[1];
 
                     // Compute valid position bounds and clamp to ensure geometry stays within boundary
+                    // Ensure origin position >= boundary min for multi-strip compatibility
                     let (g_min_rot, g_max_rot) = geom.aabb_at_rotation(rotation);
-                    let min_valid_x = b_min[0] + margin - g_min_rot[0];
+                    let min_valid_x = (b_min[0] + margin - g_min_rot[0]).max(b_min[0] + margin);
                     let max_valid_x = b_max[0] - margin - g_max_rot[0];
-                    let min_valid_y = b_min[1] + margin - g_min_rot[1];
+                    let min_valid_y = (b_min[1] + margin - g_min_rot[1]).max(b_min[1] + margin);
                     let max_valid_y = b_max[1] - margin - g_max_rot[1];
 
                     let clamped_x = origin_x.clamp(min_valid_x, max_valid_x);
@@ -987,11 +994,12 @@ impl Nester2D {
 
                 if let Some((x, y, rotation)) = best_placement {
                     // Compute valid position bounds and clamp to ensure geometry stays within boundary
+                    // Ensure origin position >= boundary min for multi-strip compatibility
                     let (b_min, b_max) = boundary.aabb();
                     let (g_min, g_max) = geom.aabb_at_rotation(rotation);
-                    let min_valid_x = b_min[0] + margin - g_min[0];
+                    let min_valid_x = (b_min[0] + margin - g_min[0]).max(b_min[0] + margin);
                     let max_valid_x = b_max[0] - margin - g_max[0];
-                    let min_valid_y = b_min[1] + margin - g_min[1];
+                    let min_valid_y = (b_min[1] + margin - g_min[1]).max(b_min[1] + margin);
                     let max_valid_y = b_max[1] - margin - g_max[1];
 
                     let clamped_x = x.clamp(min_valid_x, max_valid_x);
@@ -1695,5 +1703,561 @@ mod tests {
 
         // Should place all items (no early exit)
         assert_eq!(result.placements.len(), 4);
+    }
+
+    #[test]
+    fn test_blf_bounds_clamping() {
+        // Test that BLF correctly clamps placements within boundary
+        // Create a shape with non-zero g_min (similar to Gear shape)
+        // Gear-like: x ranges from 5 to 95 (width=90), y from 5 to 95 (height=90)
+        let gear_like = Geometry2D::new("gear")
+            .with_polygon(vec![
+                (50.0, 5.0),   // Bottom
+                (65.0, 15.0),
+                (77.0, 18.0),
+                (80.0, 32.0),
+                (95.0, 50.0),  // Right
+                (80.0, 68.0),
+                (77.0, 82.0),
+                (65.0, 85.0),
+                (50.0, 95.0),  // Top
+                (35.0, 85.0),
+                (23.0, 82.0),
+                (20.0, 68.0),
+                (5.0, 50.0),   // Left (min_x = 5)
+                (20.0, 32.0),
+                (23.0, 18.0),
+                (35.0, 15.0),
+            ])
+            .with_quantity(1);
+
+        // Boundary is 100x100
+        let boundary = Boundary2D::rectangle(100.0, 100.0);
+
+        let config = Config::default().with_strategy(Strategy::BottomLeftFill);
+        let nester = Nester2D::new(config);
+
+        let result = nester.solve(&[gear_like.clone()], &boundary).unwrap();
+
+        assert_eq!(result.placements.len(), 1);
+        let placement = &result.placements[0];
+
+        // Origin position
+        let origin_x = placement.position[0];
+        let origin_y = placement.position[1];
+
+        // Get rotation from placement (2D rotation is a single value in Vec)
+        let rotation = placement.rotation.first().copied().unwrap_or(0.0);
+
+        // Get AABB at rotation
+        let (g_min, g_max) = gear_like.aabb_at_rotation(rotation);
+
+        // Actual geometry bounds after placement
+        let actual_min_x = origin_x + g_min[0];
+        let actual_max_x = origin_x + g_max[0];
+        let actual_min_y = origin_y + g_min[1];
+        let actual_max_y = origin_y + g_max[1];
+
+        // All edges should be within boundary [0, 100]
+        assert!(
+            actual_min_x >= 0.0,
+            "Left edge {} should be >= 0",
+            actual_min_x
+        );
+        assert!(
+            actual_max_x <= 100.0,
+            "Right edge {} should be <= 100",
+            actual_max_x
+        );
+        assert!(
+            actual_min_y >= 0.0,
+            "Bottom edge {} should be >= 0",
+            actual_min_y
+        );
+        assert!(
+            actual_max_y <= 100.0,
+            "Top edge {} should be <= 100",
+            actual_max_y
+        );
+    }
+
+    #[test]
+    fn test_blf_bounds_clamping_many_pieces() {
+        // Test BLF bounds clamping with many pieces to trigger row overflow
+        // This mimics the actual failing case from test_blf.py
+        let gear_like = Geometry2D::new("gear")
+            .with_polygon(vec![
+                (50.0, 5.0),
+                (65.0, 15.0),
+                (77.0, 18.0),
+                (80.0, 32.0),
+                (95.0, 50.0),
+                (80.0, 68.0),
+                (77.0, 82.0),
+                (65.0, 85.0),
+                (50.0, 95.0),
+                (35.0, 85.0),
+                (23.0, 82.0),
+                (20.0, 68.0),
+                (5.0, 50.0),
+                (20.0, 32.0),
+                (23.0, 18.0),
+                (35.0, 15.0),
+            ])
+            .with_quantity(13); // Same as Gear (shape 8) in test_blf.py
+
+        // Boundary is 500x500 like the test
+        let boundary = Boundary2D::rectangle(500.0, 500.0);
+
+        let config = Config::default().with_strategy(Strategy::BottomLeftFill);
+        let nester = Nester2D::new(config);
+
+        let result = nester.solve(&[gear_like.clone()], &boundary).unwrap();
+
+        // Check that ALL placements are within bounds
+        for (i, placement) in result.placements.iter().enumerate() {
+            let origin_x = placement.position[0];
+            let origin_y = placement.position[1];
+            let rotation = placement.rotation.first().copied().unwrap_or(0.0);
+
+            let (g_min, g_max) = gear_like.aabb_at_rotation(rotation);
+
+            let actual_min_x = origin_x + g_min[0];
+            let actual_max_x = origin_x + g_max[0];
+            let actual_min_y = origin_y + g_min[1];
+            let actual_max_y = origin_y + g_max[1];
+
+            assert!(
+                actual_min_x >= -0.01,
+                "Piece {}: Left edge {} should be >= 0",
+                i,
+                actual_min_x
+            );
+            assert!(
+                actual_max_x <= 500.01,
+                "Piece {}: Right edge {} should be <= 500",
+                i,
+                actual_max_x
+            );
+            assert!(
+                actual_min_y >= -0.01,
+                "Piece {}: Bottom edge {} should be >= 0",
+                i,
+                actual_min_y
+            );
+            assert!(
+                actual_max_y <= 500.01,
+                "Piece {}: Top edge {} should be <= 500",
+                i,
+                actual_max_y
+            );
+        }
+    }
+
+    #[test]
+    fn test_blf_bounds_trace() {
+        // Debug test: trace through BLF to understand why clamping doesn't work
+        let gear = Geometry2D::new("gear")
+            .with_polygon(vec![
+                (50.0, 5.0),
+                (65.0, 15.0),
+                (77.0, 18.0),
+                (80.0, 32.0),
+                (95.0, 50.0),
+                (80.0, 68.0),
+                (77.0, 82.0),
+                (65.0, 85.0),
+                (50.0, 95.0),
+                (35.0, 85.0),
+                (23.0, 82.0),
+                (20.0, 68.0),
+                (5.0, 50.0),
+                (20.0, 32.0),
+                (23.0, 18.0),
+                (35.0, 15.0),
+            ]);
+
+        // Verify AABB
+        let (g_min, g_max) = gear.aabb();
+        println!("Gear AABB: min={:?}, max={:?}", g_min, g_max);
+        assert!((g_min[0] - 5.0).abs() < 0.01, "g_min[0] should be 5, got {}", g_min[0]);
+        assert!((g_max[0] - 95.0).abs() < 0.01, "g_max[0] should be 95, got {}", g_max[0]);
+
+        // Verify valid origin range for 500x500 boundary
+        let b_max_x = 500.0;
+        let margin = 0.0;
+        let max_valid_x = b_max_x - margin - g_max[0];
+        println!("max_valid_x = {} - {} - {} = {}", b_max_x, margin, g_max[0], max_valid_x);
+        assert!((max_valid_x - 405.0).abs() < 0.01, "max_valid_x should be 405, got {}", max_valid_x);
+
+        // Run BLF and check the result
+        let boundary = Boundary2D::rectangle(500.0, 500.0);
+        let config = Config::default().with_strategy(Strategy::BottomLeftFill);
+        let nester = Nester2D::new(config);
+
+        let result = nester.solve(&[gear.clone().with_quantity(1)], &boundary).unwrap();
+
+        assert_eq!(result.placements.len(), 1);
+        let p = &result.placements[0];
+        let origin_x = p.position[0];
+        let rotation = p.rotation.first().copied().unwrap_or(0.0);
+
+        let (g_min_r, g_max_r) = gear.aabb_at_rotation(rotation);
+        let actual_max_x = origin_x + g_max_r[0];
+
+        println!("Placement: origin_x={}, rotation={}", origin_x, rotation);
+        println!("At rotation {}: g_min={:?}, g_max={:?}", rotation, g_min_r, g_max_r);
+        println!("Actual max x: {} + {} = {}", origin_x, g_max_r[0], actual_max_x);
+
+        assert!(
+            actual_max_x <= 500.01,
+            "Geometry exceeds boundary: max_x={} > 500",
+            actual_max_x
+        );
+    }
+
+    #[test]
+    fn test_blf_bounds_many_pieces_direct() {
+        // Test with many pieces to trigger the boundary violation
+        let gear = Geometry2D::new("gear")
+            .with_polygon(vec![
+                (50.0, 5.0),
+                (65.0, 15.0),
+                (77.0, 18.0),
+                (80.0, 32.0),
+                (95.0, 50.0),
+                (80.0, 68.0),
+                (77.0, 82.0),
+                (65.0, 85.0),
+                (50.0, 95.0),
+                (35.0, 85.0),
+                (23.0, 82.0),
+                (20.0, 68.0),
+                (5.0, 50.0),
+                (20.0, 32.0),
+                (23.0, 18.0),
+                (35.0, 15.0),
+            ])
+            .with_quantity(25); // Many pieces
+
+        let boundary = Boundary2D::rectangle(500.0, 500.0);
+        let config = Config::default().with_strategy(Strategy::BottomLeftFill);
+        let nester = Nester2D::new(config);
+
+        let result = nester.solve(&[gear.clone()], &boundary).unwrap();
+
+        println!("Placed {} pieces", result.placements.len());
+
+        // Check all placements
+        for (i, p) in result.placements.iter().enumerate() {
+            let origin_x = p.position[0];
+            let origin_y = p.position[1];
+            let rotation = p.rotation.first().copied().unwrap_or(0.0);
+
+            let (g_min_r, g_max_r) = gear.aabb_at_rotation(rotation);
+
+            let actual_min_x = origin_x + g_min_r[0];
+            let actual_max_x = origin_x + g_max_r[0];
+            let actual_min_y = origin_y + g_min_r[1];
+            let actual_max_y = origin_y + g_max_r[1];
+
+            println!(
+                "Piece {}: origin=({:.1}, {:.1}), rot={:.2}, bounds=[{:.1},{:.1}]x[{:.1},{:.1}]",
+                i, origin_x, origin_y, rotation, actual_min_x, actual_max_x, actual_min_y, actual_max_y
+            );
+
+            assert!(
+                actual_max_x <= 500.01,
+                "Piece {}: Right edge {} > 500",
+                i, actual_max_x
+            );
+            assert!(
+                actual_max_y <= 500.01,
+                "Piece {}: Top edge {} > 500",
+                i, actual_max_y
+            );
+        }
+    }
+
+    #[test]
+    fn test_blf_bounds_multi_strip() {
+        // Test with solve_multi_strip which is what benchmark runner uses
+        let gear = Geometry2D::new("gear")
+            .with_polygon(vec![
+                (50.0, 5.0),
+                (65.0, 15.0),
+                (77.0, 18.0),
+                (80.0, 32.0),
+                (95.0, 50.0),
+                (80.0, 68.0),
+                (77.0, 82.0),
+                (65.0, 85.0),
+                (50.0, 95.0),
+                (35.0, 85.0),
+                (23.0, 82.0),
+                (20.0, 68.0),
+                (5.0, 50.0),
+                (20.0, 32.0),
+                (23.0, 18.0),
+                (35.0, 15.0),
+            ])
+            .with_quantity(50); // Many pieces to force multiple strips
+
+        let boundary = Boundary2D::rectangle(500.0, 500.0);
+        let config = Config::default().with_strategy(Strategy::BottomLeftFill);
+        let nester = Nester2D::new(config);
+
+        // Use solve_multi_strip like benchmark runner does
+        let result = nester.solve_multi_strip(&[gear.clone()], &boundary).unwrap();
+
+        println!("Placed {} pieces across {} strips", result.placements.len(), result.boundaries_used);
+
+        // Check all placements - within their respective strips
+        let strip_width = 500.0;
+        for (i, p) in result.placements.iter().enumerate() {
+            let origin_x = p.position[0];
+            let origin_y = p.position[1];
+            let rotation = p.rotation.first().copied().unwrap_or(0.0);
+            let strip_idx = p.boundary_index;
+
+            // Calculate local position within strip
+            let local_x = origin_x - (strip_idx as f64 * strip_width);
+
+            let (g_min_r, g_max_r) = gear.aabb_at_rotation(rotation);
+
+            let local_max_x = local_x + g_max_r[0];
+            let local_max_y = origin_y + g_max_r[1];
+
+            println!(
+                "Piece {}: strip={}, origin=({:.1}, {:.1}), local_x={:.1}, rot={:.2}, local_max_x={:.1}",
+                i, strip_idx, origin_x, origin_y, local_x, rotation, local_max_x
+            );
+
+            assert!(
+                local_max_x <= 500.01,
+                "Piece {}: In strip {}, local right edge {:.1} > 500",
+                i, strip_idx, local_max_x
+            );
+            assert!(
+                local_max_y <= 500.01,
+                "Piece {}: Top edge {:.1} > 500",
+                i, local_max_y
+            );
+        }
+    }
+
+    #[test]
+    fn test_blf_bounds_mixed_shapes() {
+        // Replicate test_blf.py with all 9 shapes
+        let shapes = vec![
+            // Shape 0: Rounded rectangle (demand 2)
+            Geometry2D::new("shape0")
+                .with_polygon(vec![
+                    (0.0, 0.0), (180.0, 0.0), (195.0, 15.0), (200.0, 50.0), (200.0, 150.0),
+                    (195.0, 185.0), (180.0, 200.0), (20.0, 200.0), (5.0, 185.0), (0.0, 150.0),
+                    (0.0, 50.0), (5.0, 15.0),
+                ])
+                .with_quantity(2),
+            // Shape 1: Circular-ish (demand 4)
+            Geometry2D::new("shape1")
+                .with_polygon(vec![
+                    (60.0, 0.0), (85.0, 7.0), (104.0, 25.0), (118.0, 50.0), (120.0, 60.0),
+                    (118.0, 70.0), (104.0, 95.0), (85.0, 113.0), (60.0, 120.0), (35.0, 113.0),
+                    (16.0, 95.0), (2.0, 70.0), (0.0, 60.0), (2.0, 50.0), (16.0, 25.0), (35.0, 7.0),
+                ])
+                .with_quantity(4),
+            // Shape 2: L-shape (demand 6)
+            Geometry2D::new("shape2")
+                .with_polygon(vec![
+                    (0.0, 0.0), (80.0, 0.0), (80.0, 20.0), (20.0, 20.0), (20.0, 80.0), (0.0, 80.0),
+                ])
+                .with_quantity(6),
+            // Shape 3: Triangle (demand 6)
+            Geometry2D::new("shape3")
+                .with_polygon(vec![(0.0, 0.0), (70.0, 0.0), (0.0, 70.0)])
+                .with_quantity(6),
+            // Shape 4: Rectangle (demand 4)
+            Geometry2D::new("shape4")
+                .with_polygon(vec![(0.0, 0.0), (120.0, 0.0), (120.0, 60.0), (0.0, 60.0)])
+                .with_quantity(4),
+            // Shape 5: Hexagon (demand 8)
+            Geometry2D::new("shape5")
+                .with_polygon(vec![
+                    (15.0, 0.0), (45.0, 0.0), (60.0, 26.0), (45.0, 52.0), (15.0, 52.0), (0.0, 26.0),
+                ])
+                .with_quantity(8),
+            // Shape 6: T-shape (demand 4)
+            Geometry2D::new("shape6")
+                .with_polygon(vec![
+                    (0.0, 0.0), (90.0, 0.0), (90.0, 12.0), (55.0, 12.0), (55.0, 60.0),
+                    (35.0, 60.0), (35.0, 12.0), (0.0, 12.0),
+                ])
+                .with_quantity(4),
+            // Shape 7: Rounded square (demand 3)
+            Geometry2D::new("shape7")
+                .with_polygon(vec![
+                    (0.0, 10.0), (10.0, 0.0), (70.0, 0.0), (80.0, 10.0), (80.0, 70.0),
+                    (70.0, 80.0), (10.0, 80.0), (0.0, 70.0),
+                ])
+                .with_quantity(3),
+            // Shape 8: Gear (demand 13) - the problematic shape
+            Geometry2D::new("shape8_gear")
+                .with_polygon(vec![
+                    (50.0, 5.0), (65.0, 15.0), (77.0, 18.0), (80.0, 32.0), (95.0, 50.0),
+                    (80.0, 68.0), (77.0, 82.0), (65.0, 85.0), (50.0, 95.0), (35.0, 85.0),
+                    (23.0, 82.0), (20.0, 68.0), (5.0, 50.0), (20.0, 32.0), (23.0, 18.0), (35.0, 15.0),
+                ])
+                .with_quantity(13),
+        ];
+
+        // Total: 2+4+6+6+4+8+4+3+13 = 50 pieces
+        let boundary = Boundary2D::rectangle(500.0, 500.0);
+        let config = Config::default().with_strategy(Strategy::BottomLeftFill);
+        let nester = Nester2D::new(config);
+
+        let result = nester.solve_multi_strip(&shapes, &boundary).unwrap();
+
+        println!("Placed {} pieces across {} strips", result.placements.len(), result.boundaries_used);
+
+        // Check placements for Gear (shape8) specifically
+        let strip_width = 500.0;
+        let gear_aabb = shapes[8].aabb();
+        println!("Gear AABB: min={:?}, max={:?}", gear_aabb.0, gear_aabb.1);
+
+        let mut violations = Vec::new();
+        for p in &result.placements {
+            if p.geometry_id.as_str().starts_with("shape8") {
+                let origin_x = p.position[0];
+                let origin_y = p.position[1];
+                let rotation = p.rotation.first().copied().unwrap_or(0.0);
+                let strip_idx = p.boundary_index;
+                let local_x = origin_x - (strip_idx as f64 * strip_width);
+
+                let (g_min_r, g_max_r) = shapes[8].aabb_at_rotation(rotation);
+                let local_max_x = local_x + g_max_r[0];
+
+                println!(
+                    "{}: strip={}, local_x={:.1}, rot={:.2}, local_max_x={:.1}",
+                    p.geometry_id, strip_idx, local_x, rotation, local_max_x
+                );
+
+                if local_max_x > 500.01 {
+                    violations.push((p.geometry_id.clone(), strip_idx, local_x, local_max_x));
+                }
+            }
+        }
+
+        assert!(
+            violations.is_empty(),
+            "Found {} Gear pieces exceeding boundary: {:?}",
+            violations.len(),
+            violations
+        );
+    }
+
+    #[test]
+    fn test_blf_bounds_expanded_like_benchmark() {
+        // Replicate EXACTLY how benchmark runner creates geometries:
+        // Each piece is a separate Geometry2D with quantity=1
+        // (vertices, demand, allowed_rotations_deg)
+        let shape_defs: Vec<(Vec<(f64, f64)>, usize, Vec<f64>)> = vec![
+            (vec![
+                (0.0, 0.0), (180.0, 0.0), (195.0, 15.0), (200.0, 50.0), (200.0, 150.0),
+                (195.0, 185.0), (180.0, 200.0), (20.0, 200.0), (5.0, 185.0), (0.0, 150.0),
+                (0.0, 50.0), (5.0, 15.0),
+            ], 2, vec![0.0, 90.0, 180.0, 270.0]),
+            (vec![
+                (60.0, 0.0), (85.0, 7.0), (104.0, 25.0), (118.0, 50.0), (120.0, 60.0),
+                (118.0, 70.0), (104.0, 95.0), (85.0, 113.0), (60.0, 120.0), (35.0, 113.0),
+                (16.0, 95.0), (2.0, 70.0), (0.0, 60.0), (2.0, 50.0), (16.0, 25.0), (35.0, 7.0),
+            ], 4, vec![0.0, 45.0, 90.0, 135.0]),
+            (vec![
+                (0.0, 0.0), (80.0, 0.0), (80.0, 20.0), (20.0, 20.0), (20.0, 80.0), (0.0, 80.0),
+            ], 6, vec![0.0, 90.0, 180.0, 270.0]),
+            (vec![(0.0, 0.0), (70.0, 0.0), (0.0, 70.0)], 6, vec![0.0, 90.0, 180.0, 270.0]),
+            (vec![(0.0, 0.0), (120.0, 0.0), (120.0, 60.0), (0.0, 60.0)], 4, vec![0.0, 90.0]),
+            (vec![
+                (15.0, 0.0), (45.0, 0.0), (60.0, 26.0), (45.0, 52.0), (15.0, 52.0), (0.0, 26.0),
+            ], 8, vec![0.0, 60.0, 120.0]),
+            (vec![
+                (0.0, 0.0), (90.0, 0.0), (90.0, 12.0), (55.0, 12.0), (55.0, 60.0),
+                (35.0, 60.0), (35.0, 12.0), (0.0, 12.0),
+            ], 4, vec![0.0, 90.0, 180.0, 270.0]),
+            (vec![
+                (0.0, 10.0), (10.0, 0.0), (70.0, 0.0), (80.0, 10.0), (80.0, 70.0),
+                (70.0, 80.0), (10.0, 80.0), (0.0, 70.0),
+            ], 3, vec![0.0, 90.0]),
+            // Shape 8: Gear - with all 8 rotations
+            (vec![
+                (50.0, 5.0), (65.0, 15.0), (77.0, 18.0), (80.0, 32.0), (95.0, 50.0),
+                (80.0, 68.0), (77.0, 82.0), (65.0, 85.0), (50.0, 95.0), (35.0, 85.0),
+                (23.0, 82.0), (20.0, 68.0), (5.0, 50.0), (20.0, 32.0), (23.0, 18.0), (35.0, 15.0),
+            ], 13, vec![0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]),
+        ];
+
+        // Expand like benchmark runner: each piece is separate geometry
+        let mut geometries = Vec::new();
+        let mut piece_id = 0;
+        for (vertices, demand, rotations) in shape_defs.iter() {
+            for _ in 0..*demand {
+                let geom = Geometry2D::new(format!("piece_{}", piece_id))
+                    .with_polygon(vertices.clone())
+                    .with_rotations_deg(rotations.clone());
+                geometries.push(geom);
+                piece_id += 1;
+            }
+        }
+
+        // Store gear AABB for checking
+        let gear_geom = Geometry2D::new("gear_check")
+            .with_polygon(shape_defs[8].0.clone());
+        let (gear_min, gear_max) = gear_geom.aabb();
+        println!("Gear AABB: min={:?}, max={:?}", gear_min, gear_max);
+
+        let boundary = Boundary2D::rectangle(500.0, 500.0);
+        let config = Config::default().with_strategy(Strategy::BottomLeftFill);
+        let nester = Nester2D::new(config);
+
+        let result = nester.solve_multi_strip(&geometries, &boundary).unwrap();
+
+        println!("Placed {} pieces across {} strips", result.placements.len(), result.boundaries_used);
+
+        // Check Gear placements (piece_37 to piece_49)
+        let strip_width = 500.0;
+        let mut violations = Vec::new();
+
+        for p in &result.placements {
+            let id_num: usize = p.geometry_id.as_str()
+                .strip_prefix("piece_")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0);
+
+            // piece_37 to piece_49 are Gear shapes
+            if id_num >= 37 && id_num <= 49 {
+                let origin_x = p.position[0];
+                let rotation = p.rotation.first().copied().unwrap_or(0.0);
+                let strip_idx = p.boundary_index;
+                let local_x = origin_x - (strip_idx as f64 * strip_width);
+
+                let (_, g_max_r) = gear_geom.aabb_at_rotation(rotation);
+                let local_max_x = local_x + g_max_r[0];
+
+                println!(
+                    "{}: strip={}, local_x={:.1}, rot={:.2}, local_max_x={:.1}",
+                    p.geometry_id, strip_idx, local_x, rotation, local_max_x
+                );
+
+                if local_max_x > 500.01 {
+                    violations.push((p.geometry_id.clone(), strip_idx, local_x, local_max_x));
+                }
+            }
+        }
+
+        assert!(
+            violations.is_empty(),
+            "Found {} Gear pieces exceeding boundary: {:?}",
+            violations.len(),
+            violations
+        );
     }
 }
