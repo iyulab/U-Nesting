@@ -219,7 +219,7 @@ fn solve_2d(
 ) -> PyResult<PyObject> {
     // Parse geometries
     let geom_json: String = py
-        .import_bound("json")?
+        .import("json")?
         .call_method1("dumps", (geometries,))?
         .extract()?;
     let geom_inputs: Vec<Geometry2DInput> = serde_json::from_str(&geom_json)
@@ -227,7 +227,7 @@ fn solve_2d(
 
     // Parse boundary
     let boundary_json: String = py
-        .import_bound("json")?
+        .import("json")?
         .call_method1("dumps", (boundary,))?
         .extract()?;
     let boundary_input: Boundary2DInput = serde_json::from_str(&boundary_json)
@@ -236,7 +236,7 @@ fn solve_2d(
     // Parse config
     let config_input: Option<ConfigInput> = if let Some(cfg) = config {
         let cfg_json: String = py
-            .import_bound("json")?
+            .import("json")?
             .call_method1("dumps", (cfg,))?
             .extract()?;
         Some(
@@ -322,7 +322,7 @@ fn solve_2d(
     // Convert to Python dict
     let output_json = serde_json::to_string(&output)
         .map_err(|e| PyValueError::new_err(format!("Serialization error: {}", e)))?;
-    let json_module = py.import_bound("json")?;
+    let json_module = py.import("json")?;
     let result = json_module.call_method1("loads", (output_json,))?;
     Ok(result.into())
 }
@@ -356,7 +356,7 @@ fn solve_3d(
 ) -> PyResult<PyObject> {
     // Parse geometries
     let geom_json: String = py
-        .import_bound("json")?
+        .import("json")?
         .call_method1("dumps", (geometries,))?
         .extract()?;
     let geom_inputs: Vec<Geometry3DInput> = serde_json::from_str(&geom_json)
@@ -364,7 +364,7 @@ fn solve_3d(
 
     // Parse boundary
     let boundary_json: String = py
-        .import_bound("json")?
+        .import("json")?
         .call_method1("dumps", (boundary,))?
         .extract()?;
     let boundary_input: Boundary3DInput = serde_json::from_str(&boundary_json)
@@ -373,7 +373,7 @@ fn solve_3d(
     // Parse config
     let config_input: Option<ConfigInput> = if let Some(cfg) = config {
         let cfg_json: String = py
-            .import_bound("json")?
+            .import("json")?
             .call_method1("dumps", (cfg,))?
             .extract()?;
         Some(
@@ -452,7 +452,7 @@ fn solve_3d(
     // Convert to Python dict
     let output_json = serde_json::to_string(&output)
         .map_err(|e| PyValueError::new_err(format!("Serialization error: {}", e)))?;
-    let json_module = py.import_bound("json")?;
+    let json_module = py.import("json")?;
     let result = json_module.call_method1("loads", (output_json,))?;
     Ok(result.into())
 }

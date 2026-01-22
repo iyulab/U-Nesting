@@ -61,7 +61,7 @@ approx = "0.5"
 criterion = "0.5"
 
 # Python bindings
-pyo3 = { version = "0.22", features = ["extension-module"] }
+pyo3 = { version = "0.24", features = ["extension-module"] }
 
 # Internal crates
 u-nesting-core = { version = "0.1.0", path = "crates/core" }
