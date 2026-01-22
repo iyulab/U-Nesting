@@ -287,7 +287,7 @@ class NestingApp:
         param_frame.grid(row=5, column=0, sticky="ew")
 
         ttk.Label(param_frame, text="Strip Width:").grid(row=0, column=0, sticky="w")
-        self.strip_width_var = tk.StringVar(value="2500")
+        self.strip_width_var = tk.StringVar(value="500")
         ttk.Entry(param_frame, textvariable=self.strip_width_var, width=7).grid(row=0, column=1, padx=2)
 
         ttk.Label(param_frame, text="Strip Height:").grid(row=1, column=0, sticky="w")

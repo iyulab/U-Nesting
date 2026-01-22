@@ -161,6 +161,10 @@ enum StrategyArg {
     Brkga,
     /// Simulated Annealing
     Sa,
+    /// Goal-Driven Ruin and Recreate
+    Gdrr,
+    /// Adaptive Large Neighborhood Search
+    Alns,
 }
 
 impl From<StrategyArg> for Strategy {
@@ -171,6 +175,8 @@ impl From<StrategyArg> for Strategy {
             StrategyArg::Ga => Strategy::GeneticAlgorithm,
             StrategyArg::Brkga => Strategy::Brkga,
             StrategyArg::Sa => Strategy::SimulatedAnnealing,
+            StrategyArg::Gdrr => Strategy::Gdrr,
+            StrategyArg::Alns => Strategy::Alns,
         }
     }
 }

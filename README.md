@@ -5,6 +5,10 @@
 [![Crates.io](https://img.shields.io/crates/v/u-nesting.svg)](https://crates.io/crates/u-nesting)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
 
+<p align="center">
+  <img src="assets/U-Nesting.gif" alt="U-Nesting Demo" width="800">
+</p>
+
 ## Overview
 
 U-Nesting provides domain-agnostic spatial optimization algorithms for 2D nesting and 3D bin packing problems:

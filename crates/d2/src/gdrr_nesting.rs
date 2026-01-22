@@ -20,6 +20,7 @@ use crate::geometry::Geometry2D;
 use crate::nfp::{compute_ifp, compute_nfp, find_bottom_left_placement, Nfp, PlacedGeometry};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Instant;
 use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::gdrr::{
     GdrrConfig, GdrrProblem, GdrrResult, GdrrRunner, GdrrSolution, RecreateResult,
@@ -141,6 +142,10 @@ pub struct GdrrNestingProblem {
     geometry_areas: Vec<f64>,
     /// Cancellation flag.
     cancelled: Arc<AtomicBool>,
+    /// Start time for timeout checking.
+    start_time: Instant,
+    /// Time limit in milliseconds.
+    time_limit_ms: u64,
 }
 
 impl GdrrNestingProblem {
@@ -150,6 +155,7 @@ impl GdrrNestingProblem {
         boundary: Boundary2D,
         config: Config,
         cancelled: Arc<AtomicBool>,
+        time_limit_ms: u64,
     ) -> Self {
         // Build instance mapping
         let mut instances = Vec::new();
@@ -183,7 +189,17 @@ impl GdrrNestingProblem {
             rotation_angles,
             geometry_areas,
             cancelled,
+            start_time: Instant::now(),
+            time_limit_ms,
         }
+    }
+
+    /// Check if timeout has been reached.
+    fn is_timed_out(&self) -> bool {
+        if self.time_limit_ms == 0 {
+            return false;
+        }
+        self.start_time.elapsed().as_millis() as u64 >= self.time_limit_ms
     }
 
     /// Returns the total number of instances.
@@ -265,9 +281,10 @@ impl GdrrNestingProblem {
                 let (b_min, b_max) = self.boundary.aabb();
 
                 // Clamp position to keep geometry within boundary
-                let min_valid_x = b_min[0] - g_min[0];
+                // Use .max(b_min) to ensure origin position >= boundary min
+                let min_valid_x = (b_min[0] - g_min[0]).max(b_min[0]);
                 let max_valid_x = b_max[0] - g_max[0];
-                let min_valid_y = b_min[1] - g_min[1];
+                let min_valid_y = (b_min[1] - g_min[1]).max(b_min[1]);
                 let max_valid_y = b_max[1] - g_max[1];
 
                 let clamped_x = x.clamp(min_valid_x, max_valid_x);
@@ -316,7 +333,8 @@ impl GdrrNestingProblem {
         });
 
         for &instance_idx in &sorted_items {
-            if self.cancelled.load(Ordering::Relaxed) {
+            // Check cancellation and timeout
+            if self.cancelled.load(Ordering::Relaxed) || self.is_timed_out() {
                 break;
             }
 
@@ -665,6 +683,7 @@ pub fn run_gdrr_nesting(
         boundary.clone(),
         config.clone(),
         cancelled,
+        gdrr_config.time_limit_ms,
     );
 
     let runner = GdrrRunner::new(gdrr_config.clone());
@@ -802,7 +821,7 @@ mod tests {
         let config = Config::default();
         let cancelled = Arc::new(AtomicBool::new(false));
 
-        let problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled);
+        let problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled, 60000);
 
         assert_eq!(problem.num_instances(), 7); // 3 + 2 + 2
     }
@@ -814,7 +833,7 @@ mod tests {
         let config = Config::default();
         let cancelled = Arc::new(AtomicBool::new(false));
 
-        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled);
+        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled, 60000);
         let solution = problem.create_initial_solution();
 
         assert!(solution.placed.len() > 0);
@@ -862,7 +881,7 @@ mod tests {
         let config = Config::default();
         let cancelled = Arc::new(AtomicBool::new(false));
 
-        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled);
+        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled, 60000);
         let mut solution = problem.create_initial_solution();
 
         let initial_placed = solution.placed.len();
@@ -884,7 +903,7 @@ mod tests {
         let config = Config::default();
         let cancelled = Arc::new(AtomicBool::new(false));
 
-        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled);
+        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled, 60000);
         let mut solution = problem.create_initial_solution();
 
         let initial_placed = solution.placed.len();
@@ -906,7 +925,7 @@ mod tests {
         let config = Config::default();
         let cancelled = Arc::new(AtomicBool::new(false));
 
-        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled);
+        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled, 60000);
         let mut solution = problem.create_initial_solution();
 
         let initial_placed = solution.placed.len();
@@ -928,7 +947,7 @@ mod tests {
         let config = Config::default();
         let cancelled = Arc::new(AtomicBool::new(false));
 
-        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled);
+        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled, 60000);
         let mut solution = problem.create_initial_solution();
 
         let mut rng = rand::rngs::StdRng::seed_from_u64(42);
@@ -967,7 +986,7 @@ mod tests {
         let config = Config::default();
         let cancelled = Arc::new(AtomicBool::new(false));
 
-        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled);
+        let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled, 60000);
 
         let gdrr_config = GdrrConfig::new()
             .with_max_iterations(10)

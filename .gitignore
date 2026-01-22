@@ -1,5 +1,6 @@
 # Rust
 /target/
+/target-*/
 **/*.rs.bk
 Cargo.lock
 
@@ -13,6 +14,7 @@ Cargo.lock
 # OS
 .DS_Store
 Thumbs.db
+nul
 
 # Build artifacts
 *.dll
@@ -25,16 +27,22 @@ Thumbs.db
 # Generated files
 crates/ffi/include/
 
-# Benchmarks
+# Benchmarks and datasets
 datasets/
 benchmark/results/
 benchmark/reports/
 benchmark/visualizations/
+
+# Temporary files
+*.tmp
+temp_*.json
+
+# JSON files (with exceptions)
 *.json
 !benches/**/*.json
 !docs/json-schema/*.json
 !benchmark/scenarios/*.json
-!demo/*.json
+!demo/*.html
 
 # Coverage
 lcov.info
@@ -48,8 +56,7 @@ lcov.info
 .env
 .env.local
 
-# Local
-nul
+# Local development
 CLAUDE.md
 .serena/
 claudedocs/

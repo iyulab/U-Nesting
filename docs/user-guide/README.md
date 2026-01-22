@@ -14,7 +14,7 @@ Welcome to the U-Nesting User Guide. This documentation covers installation, API
 ## Quick Links
 
 - [Python Package (PyPI)](https://pypi.org/project/u-nesting/)
-- [C# Package (NuGet)](https://www.nuget.org/packages/UNesting/)
+- [Rust Crates (crates.io)](https://crates.io/crates/u-nesting)
 - [GitHub Repository](https://github.com/iyulab/U-Nesting)
 
 ## What is U-Nesting?

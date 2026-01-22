@@ -287,7 +287,7 @@ impl NestingProblem {
         let sample_step = self.compute_sample_step();
 
         // Place geometries in the order specified by chromosome
-        for &instance_idx in &chromosome.order {
+        for &instance_idx in chromosome.order.iter() {
             if self.cancelled.load(Ordering::Relaxed) {
                 break;
             }
@@ -311,7 +311,9 @@ impl NestingProblem {
             // Compute IFP for this geometry at this rotation
             let ifp = match compute_ifp(&boundary_polygon, geom, rotation_angle) {
                 Ok(ifp) => ifp,
-                Err(_) => continue,
+                Err(_) => {
+                    continue;
+                }
             };
 
             if ifp.is_empty() {
@@ -338,15 +340,18 @@ impl NestingProblem {
             // IFP returns positions where the geometry's origin should be placed.
             // Clamp to ensure placement keeps geometry within boundary.
             let nfp_refs: Vec<&Nfp> = nfps.iter().collect();
-            if let Some((x, y)) = find_bottom_left_placement(&ifp_shrunk, &nfp_refs, sample_step) {
+            let placement_result = find_bottom_left_placement(&ifp_shrunk, &nfp_refs, sample_step);
+            if let Some((x, y)) = placement_result {
                 // Compute valid position bounds based on geometry AABB at this rotation
                 let (g_min, g_max) = geom.aabb_at_rotation(rotation_angle);
                 let (b_min, b_max) = self.boundary.aabb();
 
                 // Clamp position to keep geometry within boundary
-                let min_valid_x = b_min[0] - g_min[0];
+                // Use .max(b_min) to ensure origin position >= boundary min
+                // This handles shapes where g_min > 0 (leftmost vertex not at origin)
+                let min_valid_x = (b_min[0] - g_min[0]).max(b_min[0]);
                 let max_valid_x = b_max[0] - g_max[0];
-                let min_valid_y = b_min[1] - g_min[1];
+                let min_valid_y = (b_min[1] - g_min[1]).max(b_min[1]);
                 let max_valid_y = b_max[1] - g_max[1];
 
                 let clamped_x = x.clamp(min_valid_x, max_valid_x);

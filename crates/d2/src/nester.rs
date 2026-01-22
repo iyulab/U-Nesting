@@ -509,11 +509,16 @@ impl Nester2D {
         boundary: &Boundary2D,
     ) -> Result<SolveResult<f64>> {
         // Configure GA from solver config
-        let ga_config = GaConfig::default()
+        let mut ga_config = GaConfig::default()
             .with_population_size(self.config.population_size)
             .with_max_generations(self.config.max_generations)
             .with_crossover_rate(self.config.crossover_rate)
             .with_mutation_rate(self.config.mutation_rate);
+
+        // Apply time limit if specified
+        if self.config.time_limit_ms > 0 {
+            ga_config = ga_config.with_time_limit(std::time::Duration::from_millis(self.config.time_limit_ms));
+        }
 
         let result = run_ga_nesting(
             geometries,
@@ -531,12 +536,18 @@ impl Nester2D {
     /// Uses random-key encoding and biased crossover for robust optimization.
     fn brkga(&self, geometries: &[Geometry2D], boundary: &Boundary2D) -> Result<SolveResult<f64>> {
         // Configure BRKGA with reasonable defaults
-        let brkga_config = BrkgaConfig::default()
+        let mut brkga_config = BrkgaConfig::default()
             .with_population_size(50)
             .with_max_generations(100)
             .with_elite_fraction(0.2)
             .with_mutant_fraction(0.15)
             .with_elite_bias(0.7);
+
+        // Apply time limit if specified
+        if self.config.time_limit_ms > 0 {
+            brkga_config = brkga_config
+                .with_time_limit(std::time::Duration::from_millis(self.config.time_limit_ms));
+        }
 
         let result = run_brkga_nesting(
             geometries,
@@ -559,12 +570,18 @@ impl Nester2D {
         boundary: &Boundary2D,
     ) -> Result<SolveResult<f64>> {
         // Configure SA with reasonable defaults
-        let sa_config = SaConfig::default()
+        let mut sa_config = SaConfig::default()
             .with_initial_temp(100.0)
             .with_final_temp(0.1)
             .with_cooling_rate(0.95)
             .with_iterations_per_temp(50)
             .with_max_iterations(10000);
+
+        // Apply time limit if specified
+        if self.config.time_limit_ms > 0 {
+            sa_config = sa_config
+                .with_time_limit(std::time::Duration::from_millis(self.config.time_limit_ms));
+        }
 
         let result = run_sa_nesting(
             geometries,
@@ -584,9 +601,15 @@ impl Nester2D {
         boundary: &Boundary2D,
     ) -> Result<SolveResult<f64>> {
         // Configure GDRR with reasonable defaults
+        // Use user's time limit, default to 60s if not specified
+        let time_limit = if self.config.time_limit_ms > 0 {
+            self.config.time_limit_ms
+        } else {
+            60000
+        };
         let gdrr_config = GdrrConfig::default()
             .with_max_iterations(5000)
-            .with_time_limit_ms(self.config.time_limit_ms.max(30000))
+            .with_time_limit_ms(time_limit)
             .with_ruin_ratio(0.1, 0.4)
             .with_lahc_list_length(50);
 
@@ -608,9 +631,15 @@ impl Nester2D {
         boundary: &Boundary2D,
     ) -> Result<SolveResult<f64>> {
         // Configure ALNS with reasonable defaults
+        // Use user's time limit, default to 60s if not specified
+        let time_limit = if self.config.time_limit_ms > 0 {
+            self.config.time_limit_ms
+        } else {
+            60000
+        };
         let alns_config = AlnsConfig::default()
             .with_max_iterations(5000)
-            .with_time_limit_ms(self.config.time_limit_ms.max(30000))
+            .with_time_limit_ms(time_limit)
             .with_segment_size(100)
             .with_scores(33.0, 9.0, 13.0)
             .with_reaction_factor(0.1)
@@ -1216,11 +1245,16 @@ impl Solver for Nester2D {
                 self.nfp_guided_blf_with_progress(geometries, boundary, &callback)?
             }
             Strategy::GeneticAlgorithm => {
-                let ga_config = GaConfig::default()
+                let mut ga_config = GaConfig::default()
                     .with_population_size(self.config.population_size)
                     .with_max_generations(self.config.max_generations)
                     .with_crossover_rate(self.config.crossover_rate)
                     .with_mutation_rate(self.config.mutation_rate);
+
+                // Apply time limit if specified
+                if self.config.time_limit_ms > 0 {
+                    ga_config = ga_config.with_time_limit(std::time::Duration::from_millis(self.config.time_limit_ms));
+                }
 
                 run_ga_nesting_with_progress(
                     geometries,

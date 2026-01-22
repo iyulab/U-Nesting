@@ -180,9 +180,10 @@ impl SaNestingProblem {
                 let (b_min, b_max) = self.boundary.aabb();
 
                 // Clamp position to keep geometry within boundary
-                let min_valid_x = b_min[0] - g_min[0];
+                // Use .max(b_min) to ensure origin position >= boundary min
+                let min_valid_x = (b_min[0] - g_min[0]).max(b_min[0]);
                 let max_valid_x = b_max[0] - g_max[0];
-                let min_valid_y = b_min[1] - g_min[1];
+                let min_valid_y = (b_min[1] - g_min[1]).max(b_min[1]);
                 let max_valid_y = b_max[1] - g_max[1];
 
                 let clamped_x = x.clamp(min_valid_x, max_valid_x);
