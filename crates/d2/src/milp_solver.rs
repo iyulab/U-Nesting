@@ -306,7 +306,7 @@ fn solve_milp(
 
     // Rotation selection constraints: exactly one rotation per piece
     for i in 0..n {
-        let sum: Expression = rot[i].iter().map(|&v| v.into()).sum();
+        let sum: Expression = rot[i].iter().map(|&v| Expression::from(v)).sum();
         problem = problem.with(constraint!(sum == 1.0));
     }
 

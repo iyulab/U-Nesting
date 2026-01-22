@@ -32,8 +32,10 @@
 
 use crate::boundary::Boundary2D;
 use crate::geometry::Geometry2D;
+#[cfg(feature = "milp")]
 use crate::nfp::{compute_ifp_with_margin, compute_nfp, Nfp};
-use u_nesting_core::exact::{ExactConfig, ExactResult, SolutionStatus};
+#[cfg(feature = "milp")]
+use u_nesting_core::exact::{ExactConfig, ExactResult};
 use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::solver::Config;
 use u_nesting_core::{Placement, SolveResult};
@@ -512,7 +514,7 @@ fn solve_nfp_cm_milp(
             return None;
         }
 
-        let sum: Expression = z[i].iter().map(|&v| v.into()).sum();
+        let sum: Expression = z[i].iter().map(|&v| Expression::from(v)).sum();
         problem = problem.with(constraint!(sum == 1.0));
     }
 
