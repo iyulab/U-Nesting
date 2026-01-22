@@ -2,9 +2,8 @@
 
 use crate::alns_nesting::run_alns_nesting;
 use crate::boundary::Boundary2D;
-use crate::clamp_placement_to_boundary_with_margin;
-use crate::validate_and_filter_placements;
 use crate::brkga_nesting::run_brkga_nesting;
+use crate::clamp_placement_to_boundary_with_margin;
 use crate::ga_nesting::{run_ga_nesting, run_ga_nesting_with_progress};
 use crate::gdrr_nesting::run_gdrr_nesting;
 use crate::geometry::Geometry2D;
@@ -18,6 +17,7 @@ use crate::nfp::{
 #[allow(unused_imports)]
 use crate::nfp_cm_solver::run_nfp_cm_nesting;
 use crate::sa_nesting::run_sa_nesting;
+use crate::validate_and_filter_placements;
 use u_nesting_core::alns::AlnsConfig;
 use u_nesting_core::brkga::BrkgaConfig;
 #[cfg(feature = "milp")]
@@ -2640,12 +2640,7 @@ mod tests {
                 .with_rotations_deg(vec![0.0, 90.0, 180.0, 270.0])
                 .with_quantity(6),
             Geometry2D::new("shape4_rect")
-                .with_polygon(vec![
-                    (0.0, 0.0),
-                    (120.0, 0.0),
-                    (120.0, 60.0),
-                    (0.0, 60.0),
-                ])
+                .with_polygon(vec![(0.0, 0.0), (120.0, 0.0), (120.0, 60.0), (0.0, 60.0)])
                 .with_rotations_deg(vec![0.0, 90.0])
                 .with_quantity(4),
             Geometry2D::new("shape5_hexagon")
@@ -2805,16 +2800,18 @@ mod tests {
                 {
                     boundary_violations.push(format!(
                         "{} in strip {}: bounds ({:.1}, {:.1}) to ({:.1}, {:.1})",
-                        p.geometry_id, strip_idx, local_min_x, local_min_y, local_max_x, local_max_y
+                        p.geometry_id,
+                        strip_idx,
+                        local_min_x,
+                        local_min_y,
+                        local_max_x,
+                        local_max_y
                     ));
                 }
             }
 
             if !boundary_violations.is_empty() {
-                println!(
-                    "  BOUNDARY VIOLATIONS ({}):",
-                    boundary_violations.len()
-                );
+                println!("  BOUNDARY VIOLATIONS ({}):", boundary_violations.len());
                 for v in &boundary_violations {
                     println!("    - {}", v);
                 }
@@ -2835,12 +2832,8 @@ mod tests {
                     }
 
                     // Find geometries
-                    let g1 = shapes
-                        .iter()
-                        .find(|g| p1.geometry_id.starts_with(g.id()));
-                    let g2 = shapes
-                        .iter()
-                        .find(|g| p2.geometry_id.starts_with(g.id()));
+                    let g1 = shapes.iter().find(|g| p1.geometry_id.starts_with(g.id()));
+                    let g2 = shapes.iter().find(|g| p2.geometry_id.starts_with(g.id()));
 
                     let (g1, g2) = match (g1, g2) {
                         (Some(a), Some(b)) => (a, b),

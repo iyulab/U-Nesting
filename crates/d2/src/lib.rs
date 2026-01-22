@@ -226,7 +226,10 @@ pub fn validate_and_filter_placements(
     let (b_min, b_max) = boundary.aabb();
     log::debug!(
         "Validating placements against boundary: ({:.2}, {:.2}) to ({:.2}, {:.2})",
-        b_min[0], b_min[1], b_max[0], b_max[1]
+        b_min[0],
+        b_min[1],
+        b_max[0],
+        b_max[1]
     );
 
     let mut valid_placements = Vec::new();
@@ -269,7 +272,10 @@ pub fn validate_and_filter_placements(
     }
 
     if filtered_count > 0 {
-        log::warn!("Validation filtered out {} placements as out-of-bounds", filtered_count);
+        log::warn!(
+            "Validation filtered out {} placements as out-of-bounds",
+            filtered_count
+        );
     }
 
     // Update result with valid placements only
