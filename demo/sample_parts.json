@@ -1,0 +1,57 @@
+{
+  "name": "sample_parts",
+  "items": [
+    {
+      "id": 0,
+      "name": "Bracket_A",
+      "demand": 5,
+      "allowed_orientations": [0.0, 90.0, 180.0, 270.0],
+      "shape": {
+        "type": "simple_polygon",
+        "data": [[0,0], [100,0], [100,50], [0,50], [0,0]]
+      }
+    },
+    {
+      "id": 1,
+      "name": "Plate_B",
+      "demand": 3,
+      "allowed_orientations": [0.0, 90.0],
+      "shape": {
+        "type": "simple_polygon",
+        "data": [[0,0], [150,0], [150,80], [0,80], [0,0]]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Triangle_C",
+      "demand": 8,
+      "allowed_orientations": [0.0, 60.0, 120.0, 180.0, 240.0, 300.0],
+      "shape": {
+        "type": "simple_polygon",
+        "data": [[0,0], [80,0], [40,69.28], [0,0]]
+      }
+    },
+    {
+      "id": 3,
+      "name": "LShape_D",
+      "demand": 4,
+      "allowed_orientations": [0.0, 90.0, 180.0, 270.0],
+      "shape": {
+        "type": "simple_polygon",
+        "data": [[0,0], [100,0], [100,30], [30,30], [30,80], [0,80], [0,0]]
+      }
+    },
+    {
+      "id": 4,
+      "name": "Square_E",
+      "demand": 6,
+      "allowed_orientations": [0.0, 90.0],
+      "shape": {
+        "type": "simple_polygon",
+        "data": [[0,0], [60,0], [60,60], [0,60], [0,0]]
+      }
+    }
+  ],
+  "strip_width": 500,
+  "strip_height": 300
+}
