@@ -3,7 +3,10 @@
 **2D/3D Spatial Optimization Engine** - High-performance nesting and bin packing algorithms in Rust with C FFI support
 
 [![Crates.io](https://img.shields.io/crates/v/u-nesting.svg)](https://crates.io/crates/u-nesting)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
+[![docs.rs](https://docs.rs/u-nesting/badge.svg)](https://docs.rs/u-nesting)
+[![Build Status](https://github.com/iyulab/U-Nesting/actions/workflows/ci.yml/badge.svg)](https://github.com/iyulab/U-Nesting/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
+[![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 
 <p align="center">
   <img src="assets/U-Nesting.gif" alt="U-Nesting Demo" width="800">
@@ -44,6 +47,35 @@ U-Nesting is a **pure computation engine** with no domain-specific logic. Indust
 - 📦 **3D Support** - Box and mesh packing with physical constraints
 - 🔌 **C FFI Support** - Use from C#, Python, or any language with C bindings
 - 📦 **Zero Domain Dependencies** - Pure mathematical optimization
+
+## Demo
+
+### Sample Dataset
+
+A test dataset with **9 different polygon shapes** and **50 total pieces** on a 500×500 boundary:
+
+<p align="center">
+  <img src="assets/samples.png" alt="Sample Shapes" width="400">
+  <img src="assets/random.png" alt="Randomized Order" width="400">
+</p>
+
+<p align="center">
+  <em>Left: Original shapes | Right: Randomized input order</em>
+</p>
+
+### Algorithm Comparison
+
+Optimization results using different algorithms on the same dataset:
+
+| Algorithm | Result |
+|-----------|--------|
+| **BLF** (Bottom-Left Fill) | <img src="assets/BLF.png" alt="BLF Result" width="300"> |
+| **NFP** (No-Fit Polygon Guided) | <img src="assets/NFP.png" alt="NFP Result" width="300"> |
+| **GA** (Genetic Algorithm) | <img src="assets/GA.png" alt="GA Result" width="300"> |
+| **BRKGA** (Biased Random-Key GA) | <img src="assets/BRKGA.png" alt="BRKGA Result" width="300"> |
+| **SA** (Simulated Annealing) | <img src="assets/SA.png" alt="SA Result" width="300"> |
+| **GDRR** (Greedy Descent with Restarts) | <img src="assets/GDRR.png" alt="GDRR Result" width="300"> |
+| **ALNS** (Adaptive Large Neighborhood Search) | <img src="assets/ALNS.png" alt="ALNS Result" width="300"> |
 
 ## Installation
 
@@ -157,19 +189,23 @@ u-nesting/
 
 ### 2D Algorithms
 
-| Algorithm | Complexity | Quality | Speed |
-|-----------|------------|---------|-------|
-| **Bottom-Left Fill** | O(n²) | ★★★☆☆ | ★★★★★ |
-| **NFP + BLF** | O(n² × k) | ★★★★☆ | ★★★☆☆ |
-| **Genetic Algorithm** | O(g × p × n²) | ★★★★★ | ★★☆☆☆ |
+| Algorithm | Description | Quality | Speed |
+|-----------|-------------|---------|-------|
+| **BLF** (Bottom-Left Fill) | Greedy placement at bottom-left positions | ★★★☆☆ | ★★★★★ |
+| **NFP** (No-Fit Polygon Guided) | NFP-based collision-free placement | ★★★★☆ | ★★★☆☆ |
+| **GA** (Genetic Algorithm) | Sequence optimization with crossover/mutation | ★★★★★ | ★★☆☆☆ |
+| **BRKGA** (Biased Random-Key GA) | Random-key encoding with elite inheritance | ★★★★★ | ★★☆☆☆ |
+| **SA** (Simulated Annealing) | Temperature-based neighborhood search | ★★★★☆ | ★★★☆☆ |
+| **GDRR** (Greedy Descent with Random Restarts) | Local search with restart diversification | ★★★★☆ | ★★★☆☆ |
+| **ALNS** (Adaptive Large Neighborhood Search) | Destroy-repair with operator selection | ★★★★★ | ★★☆☆☆ |
 
 ### 3D Algorithms
 
-| Algorithm | Complexity | Quality | Speed |
-|-----------|------------|---------|-------|
-| **Extreme Point** | O(n²) | ★★★☆☆ | ★★★★★ |
-| **LAFF** | O(n² log n) | ★★★★☆ | ★★★☆☆ |
-| **Genetic Algorithm** | O(g × p × n²) | ★★★★★ | ★★☆☆☆ |
+| Algorithm | Description | Quality | Speed |
+|-----------|-------------|---------|-------|
+| **Extreme Point** | Placement at extreme points | ★★★☆☆ | ★★★★★ |
+| **Layer Packing** | Layer-based bottom-up placement | ★★★☆☆ | ★★★★☆ |
+| **Genetic Algorithm** | Sequence and rotation optimization | ★★★★★ | ★★☆☆☆ |
 
 ## Configuration
 
