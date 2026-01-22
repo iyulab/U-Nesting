@@ -1278,6 +1278,47 @@ impl PlacedGeometry {
     }
 }
 
+/// Verifies that a geometry at the given position does not overlap with any placed geometries.
+///
+/// This uses actual polygon-polygon intersection testing (SAT) rather than
+/// relying solely on NFP point-in-polygon checks, providing more robust
+/// collision detection.
+///
+/// # Arguments
+/// * `geometry` - The geometry to be placed
+/// * `position` - The position (x, y) for the geometry
+/// * `rotation` - The rotation angle in radians
+/// * `placed_geometries` - List of already placed geometries
+///
+/// # Returns
+/// `true` if there is NO overlap (placement is valid), `false` if overlap detected
+pub fn verify_no_overlap(
+    geometry: &Geometry2D,
+    position: (f64, f64),
+    rotation: f64,
+    placed_geometries: &[PlacedGeometry],
+) -> bool {
+    use crate::nfp_sliding::polygons_overlap;
+
+    // Get the transformed polygon for the geometry being placed
+    let rotated = rotate_polygon(geometry.exterior(), rotation);
+    let transformed: Vec<(f64, f64)> = rotated
+        .into_iter()
+        .map(|(x, y)| (x + position.0, y + position.1))
+        .collect();
+
+    // Check against each placed geometry
+    for placed in placed_geometries {
+        let placed_polygon = placed.translated_exterior();
+
+        if polygons_overlap(&transformed, &placed_polygon) {
+            return false; // Overlap detected
+        }
+    }
+
+    true // No overlap
+}
+
 // ============================================================================
 // NFP Cache
 // ============================================================================

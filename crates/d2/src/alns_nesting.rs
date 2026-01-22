@@ -20,7 +20,9 @@
 use crate::boundary::Boundary2D;
 use crate::clamp_placement_to_boundary;
 use crate::geometry::Geometry2D;
-use crate::nfp::{compute_ifp, compute_nfp, find_bottom_left_placement, Nfp, PlacedGeometry};
+use crate::nfp::{
+    compute_ifp, compute_nfp, find_bottom_left_placement, verify_no_overlap, Nfp, PlacedGeometry,
+};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
@@ -260,6 +262,22 @@ impl AlnsNestingProblem {
                 if let Some((clamped_x, clamped_y)) =
                     clamp_placement_to_boundary(x, y, geom_aabb, boundary_aabb)
                 {
+                    // Only verify overlap if clamping changed the position
+                    // The original NFP-found position is already collision-free by definition
+                    let was_clamped =
+                        (clamped_x - x).abs() > 1e-6 || (clamped_y - y).abs() > 1e-6;
+                    if was_clamped {
+                        // Verify no actual polygon overlap using SAT
+                        if !verify_no_overlap(
+                            geom,
+                            (clamped_x, clamped_y),
+                            rotation,
+                            placed_geometries,
+                        ) {
+                            continue; // Skip - clamped position would cause overlap
+                        }
+                    }
+
                     if clamped_y < best_y {
                         best_y = clamped_y;
                         best_placement = Some(PlacedItem {

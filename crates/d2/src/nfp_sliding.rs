@@ -725,15 +725,32 @@ fn compute_bbox(polygon: &[(f64, f64)]) -> ((f64, f64), (f64, f64)) {
 }
 
 /// Checks if two polygons overlap using separating axis theorem.
-fn polygons_overlap(poly_a: &[(f64, f64)], poly_b: &[(f64, f64)]) -> bool {
-    // Quick AABB check first
+/// Returns true if the polygons have actual overlap (not just touching).
+/// Uses a small tolerance to allow touching polygons without reporting overlap.
+pub fn polygons_overlap(poly_a: &[(f64, f64)], poly_b: &[(f64, f64)]) -> bool {
+    polygons_overlap_with_tolerance(poly_a, poly_b, 1e-6)
+}
+
+/// Checks if two polygons overlap using separating axis theorem with configurable tolerance.
+/// Returns true if the polygons overlap by more than the specified tolerance.
+///
+/// # Arguments
+/// * `poly_a` - First polygon vertices
+/// * `poly_b` - Second polygon vertices
+/// * `tolerance` - Minimum overlap distance to consider as actual overlap (allows touching)
+pub fn polygons_overlap_with_tolerance(
+    poly_a: &[(f64, f64)],
+    poly_b: &[(f64, f64)],
+    tolerance: f64,
+) -> bool {
+    // Quick AABB check first (with tolerance)
     let bbox_a = compute_bbox(poly_a);
     let bbox_b = compute_bbox(poly_b);
 
-    if bbox_a.1 .0 < bbox_b.0 .0
-        || bbox_b.1 .0 < bbox_a.0 .0
-        || bbox_a.1 .1 < bbox_b.0 .1
-        || bbox_b.1 .1 < bbox_a.0 .1
+    if bbox_a.1 .0 + tolerance < bbox_b.0 .0
+        || bbox_b.1 .0 + tolerance < bbox_a.0 .0
+        || bbox_a.1 .1 + tolerance < bbox_b.0 .1
+        || bbox_b.1 .1 + tolerance < bbox_a.0 .1
     {
         return false;
     }
@@ -753,8 +770,9 @@ fn polygons_overlap(poly_a: &[(f64, f64)], poly_b: &[(f64, f64)]) -> bool {
             let (min_a, max_a) = project_polygon_on_axis(poly_a, axis);
             let (min_b, max_b) = project_polygon_on_axis(poly_b, axis);
 
-            // Check for gap
-            if max_a < min_b || max_b < min_a {
+            // Check for gap (with tolerance - allow touching)
+            // If max_a + tolerance < min_b, there's a clear gap
+            if max_a + tolerance < min_b || max_b + tolerance < min_a {
                 return false; // Separating axis found
             }
         }
