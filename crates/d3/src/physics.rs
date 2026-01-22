@@ -393,11 +393,7 @@ impl PhysicsSimulator {
         // Quick simulation to check if boxes would move
         let result = self.simulate_settlement(boxes, container_dims, floor_z);
 
-        if let Some(report) = result.stability_report {
-            report
-        } else {
-            StabilityReport::new()
-        }
+        result.stability_report.unwrap_or_default()
     }
 
     /// Resolves collisions with the floor.

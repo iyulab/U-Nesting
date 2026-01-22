@@ -1172,10 +1172,7 @@ impl Nester2D {
             }
 
             // Update remaining geometries (those not placed)
-            remaining_geometries = remaining_geometries
-                .into_iter()
-                .filter(|g| !placed_ids.contains(g.id()))
-                .collect();
+            remaining_geometries.retain(|g| !placed_ids.contains(g.id()));
 
             // Also handle quantity > 1: reduce quantity for partially placed items
             // For now, we treat each geometry independently

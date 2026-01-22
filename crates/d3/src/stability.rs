@@ -30,10 +30,11 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 /// Stability constraint type for 3D packing.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum StabilityConstraint {
     /// No stability checking (fastest).
+    #[default]
     None,
 
     /// Full base support: 100% of the bottom face must be supported.
@@ -60,12 +61,6 @@ pub enum StabilityConstraint {
         /// Tolerance for moment balance (default: 1e-6).
         moment_tolerance: f64,
     },
-}
-
-impl Default for StabilityConstraint {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 impl StabilityConstraint {
