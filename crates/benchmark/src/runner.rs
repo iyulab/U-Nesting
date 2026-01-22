@@ -156,25 +156,17 @@ impl BenchmarkRunner {
                         // Calculate actual strip length (max x of all placements)
                         let strip_length = self.calculate_strip_length(&solve_result, &geometries);
 
-                        // Find min coordinates for normalization
-                        let min_x = solve_result
-                            .placements
-                            .iter()
-                            .map(|p| p.position[0])
-                            .fold(f64::INFINITY, f64::min);
-                        let min_y = solve_result
-                            .placements
-                            .iter()
-                            .map(|p| p.position[1])
-                            .fold(f64::INFINITY, f64::min);
-
-                        // Convert placements to PlacementInfo with normalized coordinates
+                        // Convert placements to PlacementInfo
+                        // Note: Do NOT normalize positions - the algorithms return positions
+                        // where the geometry's origin should be placed. For rotated geometries,
+                        // the origin position accounts for the AABB offset so that all vertices
+                        // stay within bounds. Normalizing would break this.
                         let placement_infos: Vec<crate::result::PlacementInfo> = solve_result
                             .placements
                             .iter()
                             .map(|p| crate::result::PlacementInfo {
                                 geometry_id: p.geometry_id.clone(),
-                                position: [p.position[0] - min_x, p.position[1] - min_y],
+                                position: [p.position[0], p.position[1]],
                                 rotation: p.rotation.first().copied().unwrap_or(0.0),
                             })
                             .collect();

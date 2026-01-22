@@ -34,6 +34,48 @@ use u_nesting_core::geometry::Geometry2DExt;
 use u_nesting_core::robust::{orient2d_filtered, Orientation};
 use u_nesting_core::{Error, Result};
 
+/// Rotates an NFP around the origin by the given angle (in radians).
+///
+/// This is used when computing NFP with relative rotation and then
+/// transforming it to the actual placed geometry's rotation.
+pub fn rotate_nfp(nfp: &Nfp, angle: f64) -> Nfp {
+    if angle.abs() < 1e-10 {
+        return nfp.clone();
+    }
+
+    let cos_a = angle.cos();
+    let sin_a = angle.sin();
+
+    Nfp {
+        polygons: nfp
+            .polygons
+            .iter()
+            .map(|polygon| {
+                polygon
+                    .iter()
+                    .map(|&(x, y)| (x * cos_a - y * sin_a, x * sin_a + y * cos_a))
+                    .collect()
+            })
+            .collect(),
+    }
+}
+
+/// Translates an NFP by the given offset.
+pub fn translate_nfp(nfp: &Nfp, offset: (f64, f64)) -> Nfp {
+    Nfp {
+        polygons: nfp
+            .polygons
+            .iter()
+            .map(|polygon| {
+                polygon
+                    .iter()
+                    .map(|(x, y)| (x + offset.0, y + offset.1))
+                    .collect()
+            })
+            .collect(),
+    }
+}
+
 /// NFP computation result.
 #[derive(Debug, Clone)]
 pub struct Nfp {

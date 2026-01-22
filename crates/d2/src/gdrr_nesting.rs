@@ -256,21 +256,31 @@ impl GdrrNestingProblem {
             let ifp_shrunk = shrink_ifp(&ifp, spacing);
 
             // Find bottom-left placement
+            // IFP returns positions where the geometry's origin should be placed.
+            // Clamp to ensure placement keeps geometry within boundary.
             let nfp_refs: Vec<&Nfp> = nfps.iter().collect();
             if let Some((x, y)) = find_bottom_left_placement(&ifp_shrunk, &nfp_refs, sample_step) {
-                // Adjust for geometry's own coordinate offset
-                let (g_min, _) = geom.aabb_at_rotation(rotation);
-                let adjusted_x = x - g_min[0];
-                let adjusted_y = y - g_min[1];
+                // Compute valid position bounds based on geometry AABB at this rotation
+                let (g_min, g_max) = geom.aabb_at_rotation(rotation);
+                let (b_min, b_max) = self.boundary.aabb();
 
-                if y < best_y {
-                    best_y = y;
+                // Clamp position to keep geometry within boundary
+                let min_valid_x = b_min[0] - g_min[0];
+                let max_valid_x = b_max[0] - g_max[0];
+                let min_valid_y = b_min[1] - g_min[1];
+                let max_valid_y = b_max[1] - g_max[1];
+
+                let clamped_x = x.clamp(min_valid_x, max_valid_x);
+                let clamped_y = y.clamp(min_valid_y, max_valid_y);
+
+                if clamped_y < best_y {
+                    best_y = clamped_y;
                     best_placement = Some(PlacedItem {
                         instance_idx,
-                        x: adjusted_x,
-                        y: adjusted_y,
+                        x: clamped_x,
+                        y: clamped_y,
                         rotation,
-                        score: y, // Score based on Y position
+                        score: clamped_y, // Score based on Y position
                     });
                 }
             }

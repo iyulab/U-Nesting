@@ -5,7 +5,8 @@ use crate::brkga_nesting::run_brkga_nesting;
 use crate::ga_nesting::{run_ga_nesting, run_ga_nesting_with_progress};
 use crate::geometry::Geometry2D;
 use crate::nfp::{
-    compute_ifp_with_margin, compute_nfp, find_bottom_left_placement, Nfp, NfpCache, PlacedGeometry,
+    compute_ifp_with_margin, compute_nfp, find_bottom_left_placement, rotate_nfp, translate_nfp,
+    Nfp, NfpCache, PlacedGeometry,
 };
 use crate::alns_nesting::run_alns_nesting;
 use crate::gdrr_nesting::run_gdrr_nesting;
@@ -287,10 +288,12 @@ impl Nester2D {
                             rotation - placed.rotation, // Relative rotation
                         );
 
-                        // Compute NFP at origin and cache it
+                        // Compute NFP at origin and cache it (with relative rotation)
+                        // NFP is computed between the placed geometry at origin (no rotation)
+                        // and the new geometry with relative rotation applied.
+                        // Formula: NFP_actual = translate(rotate(NFP_relative, placed.rotation), placed.position)
                         let nfp_at_origin =
                             match self.nfp_cache.get_or_compute(cache_key, || {
-                                // Rotate placed geometry to its rotation
                                 let placed_at_origin = placed.geometry.clone();
                                 compute_nfp(&placed_at_origin, geom, rotation - placed.rotation)
                             }) {
@@ -298,8 +301,10 @@ impl Nester2D {
                                 Err(_) => continue,
                             };
 
-                        // Translate cached NFP to placed position and expand by spacing
-                        let translated_nfp = translate_nfp_exterior(&nfp_at_origin, placed.position);
+                        // Transform NFP: first rotate by placed.rotation, then translate to placed.position
+                        // This correctly accounts for the placed geometry's actual orientation
+                        let rotated_nfp = rotate_nfp(&nfp_at_origin, placed.rotation);
+                        let translated_nfp = translate_nfp(&rotated_nfp, placed.position);
                         let expanded = self.expand_nfp(&translated_nfp, spacing);
                         nfps.push(expanded);
                     }
@@ -907,6 +912,8 @@ impl Nester2D {
                             rotation - placed.rotation,
                         );
 
+                        // Compute NFP at origin and cache it (with relative rotation)
+                        // Formula: NFP_actual = translate(rotate(NFP_relative, placed.rotation), placed.position)
                         let nfp_at_origin =
                             match self.nfp_cache.get_or_compute(cache_key, || {
                                 let placed_at_origin = placed.geometry.clone();
@@ -916,7 +923,9 @@ impl Nester2D {
                                 Err(_) => continue,
                             };
 
-                        let translated_nfp = translate_nfp_exterior(&nfp_at_origin, placed.position);
+                        // Transform NFP: first rotate by placed.rotation, then translate
+                        let rotated_nfp = rotate_nfp(&nfp_at_origin, placed.rotation);
+                        let translated_nfp = translate_nfp(&rotated_nfp, placed.position);
                         let expanded = self.expand_nfp(&translated_nfp, spacing);
                         nfps.push(expanded);
                     }
@@ -1086,22 +1095,6 @@ fn polygon_centroid(polygon: &[(f64, f64)]) -> (f64, f64) {
         .fold((0.0, 0.0), |acc, &(x, y)| (acc.0 + x, acc.1 + y));
     let n = polygon.len() as f64;
     (sum.0 / n, sum.1 / n)
-}
-
-/// Translates an NFP by the given offset.
-fn translate_nfp_exterior(nfp: &Nfp, offset: (f64, f64)) -> Nfp {
-    Nfp {
-        polygons: nfp
-            .polygons
-            .iter()
-            .map(|polygon| {
-                polygon
-                    .iter()
-                    .map(|(x, y)| (x + offset.0, y + offset.1))
-                    .collect()
-            })
-            .collect(),
-    }
 }
 
 impl Solver for Nester2D {
