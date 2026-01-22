@@ -33,7 +33,7 @@
         .status.error { border-left: 3px solid #e74c3c; }
         .part-list { max-height: 100px; overflow-y: auto; background: #0f3460; border-radius: 4px; padding: 6px; font-size: 0.7rem; }
         .part-item { padding: 3px 6px; margin-bottom: 2px; background: #16213e; border-radius: 3px; display: flex; justify-content: space-between; }
-        .phase { text-align: center; font-size: 1.2rem; font-weight: bold; padding: 12px; margin-bottom: 10px; border-radius: 4px; }
+        .phase { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 1.2rem; font-weight: bold; padding: 12px 40px; border-radius: 4px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .phase.chaos { background: #e74c3c; }
         .phase.running { background: #f39c12; animation: pulse 0.5s infinite; }
         .phase.done { background: #2ecc71; }
@@ -86,11 +86,11 @@
 
         <div class="main">
             <div class="info" id="info">Load sample data to start</div>
-            <div class="phase" id="phase" style="display:none"></div>
             <div class="bins-container" id="bins"></div>
             <div class="status" id="status">Ready</div>
         </div>
     </div>
+    <div class="phase" id="phase" style="display:none"></div>
 
     <script>
         let inputData = null;
