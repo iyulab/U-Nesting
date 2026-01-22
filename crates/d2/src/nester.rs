@@ -1207,23 +1207,62 @@ impl Nester2D {
         final_result.boundaries_used = strip_index;
         final_result.deduplicate_unplaced();
 
-        // Calculate overall utilization
-        let total_boundary_area = boundary.measure() * strip_index as f64;
-        if total_boundary_area > 0.0 {
-            let placed_area: f64 = final_result
-                .placements
-                .iter()
-                .filter_map(|p| {
-                    geometries
-                        .iter()
-                        .find(|g| g.id() == &p.geometry_id)
-                        .map(|g| {
-                            use u_nesting_core::geometry::Geometry;
-                            g.measure()
-                        })
-                })
-                .sum();
-            final_result.utilization = placed_area / total_boundary_area;
+        // Calculate per-strip statistics for accurate utilization
+        let (b_min, b_max) = boundary.aabb();
+        let strip_height = b_max[1] - b_min[1]; // Height of each strip
+
+        // Group placements by strip and calculate stats
+        let mut strip_stats_map: std::collections::HashMap<usize, (f64, f64, usize)> =
+            std::collections::HashMap::new(); // strip_index -> (max_x, piece_area, count)
+
+        for placement in &final_result.placements {
+            let strip_idx = placement.boundary_index;
+            // Get the geometry to calculate its area and right edge
+            if let Some(geom) = geometries.iter().find(|g| g.id() == &placement.geometry_id) {
+                use u_nesting_core::geometry::Geometry;
+                let piece_area = geom.measure();
+                let rotation = placement.rotation.first().copied().unwrap_or(0.0);
+                let (g_min, g_max) = geom.aabb_at_rotation(rotation);
+                let piece_width = g_max[0] - g_min[0];
+                // Position in local strip coordinates (subtract strip offset)
+                let local_x = placement.position[0] - (strip_idx as f64 * strip_width);
+                let right_edge = local_x + piece_width;
+
+                let entry = strip_stats_map.entry(strip_idx).or_insert((0.0, 0.0, 0));
+                entry.0 = entry.0.max(right_edge); // max_x (used_length)
+                entry.1 += piece_area; // total piece area
+                entry.2 += 1; // piece count
+            }
+        }
+
+        // Convert to StripStats vec
+        use u_nesting_core::result::StripStats;
+        let mut strip_stats: Vec<StripStats> = strip_stats_map
+            .into_iter()
+            .map(|(idx, (used_length, piece_area, count))| StripStats {
+                strip_index: idx,
+                used_length,
+                piece_area,
+                piece_count: count,
+                strip_width: strip_height, // Note: strip_width in StripStats means the fixed dimension
+                strip_height: strip_width, // strip_height is the variable dimension (length)
+            })
+            .collect();
+        strip_stats.sort_by_key(|s| s.strip_index);
+
+        // Calculate accurate utilization
+        let total_piece_area: f64 = strip_stats.iter().map(|s| s.piece_area).sum();
+        let total_material_used: f64 = strip_stats
+            .iter()
+            .map(|s| s.strip_width * s.used_length)
+            .sum();
+
+        final_result.strip_stats = strip_stats;
+        final_result.total_piece_area = total_piece_area;
+        final_result.total_material_used = total_material_used;
+
+        if total_material_used > 0.0 {
+            final_result.utilization = total_piece_area / total_material_used;
         }
 
         Ok(final_result)

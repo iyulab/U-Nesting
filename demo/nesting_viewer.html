@@ -377,8 +377,10 @@
                 });
             });
 
-            const totalArea = binW * binH * totalStrips;
-            const util = ((totalUsedArea / totalArea) * 100).toFixed(1);
+            // Use server-provided utilization (accurate multi-strip calculation) if available
+            const util = result.utilization !== undefined
+                ? (result.utilization * 100).toFixed(1)
+                : ((totalUsedArea / (binW * binH * totalStrips)) * 100).toFixed(1);
             const timeStr = elapsedMs >= 1000 ? (elapsedMs / 1000).toFixed(1) + 's' : elapsedMs + 'ms';
             setStatus('Placed: ' + placements.length + '/' + inputData.total + ', Strips: ' + totalStrips + ' (' + binW + '×' + binH + '), Util: ' + util + '%, Time: ' + timeStr, 'success');
         }

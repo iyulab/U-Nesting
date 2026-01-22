@@ -6,6 +6,24 @@ use crate::placement::{Placement, PlacementStats};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Statistics for a single strip/boundary in multi-strip packing.
+#[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct StripStats {
+    /// Index of the strip (0-based).
+    pub strip_index: usize,
+    /// Used length of the strip (max X extent of pieces).
+    pub used_length: f64,
+    /// Total area of pieces placed on this strip.
+    pub piece_area: f64,
+    /// Number of pieces placed on this strip.
+    pub piece_count: usize,
+    /// Strip width (height dimension for horizontal strips).
+    pub strip_width: f64,
+    /// Strip height (or max possible length).
+    pub strip_height: f64,
+}
+
 /// Result of a nesting or packing solve operation.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -46,6 +64,16 @@ pub struct SolveResult<S> {
 
     /// Whether the target utilization was reached.
     pub target_reached: bool,
+
+    /// Per-strip statistics for multi-strip packing.
+    /// Contains used_length, piece_area, piece_count for each strip.
+    pub strip_stats: Vec<StripStats>,
+
+    /// Total area of all placed pieces.
+    pub total_piece_area: f64,
+
+    /// Total material area consumed (sum of strip_width × used_length for each strip).
+    pub total_material_used: f64,
 }
 
 impl<S> SolveResult<S> {
@@ -64,6 +92,9 @@ impl<S> SolveResult<S> {
             strategy: None,
             cancelled: false,
             target_reached: false,
+            strip_stats: Vec::new(),
+            total_piece_area: 0.0,
+            total_material_used: 0.0,
         }
     }
 
@@ -147,7 +178,43 @@ impl<S> SolveResult<S> {
         self.unplaced.extend(other.unplaced);
         self.computation_time_ms += other.computation_time_ms;
 
-        // Recalculate utilization would require knowing the total measures
+        // Merge strip stats with offset
+        for mut strip_stat in other.strip_stats {
+            strip_stat.strip_index += boundary_offset;
+            self.strip_stats.push(strip_stat);
+        }
+        self.total_piece_area += other.total_piece_area;
+        self.total_material_used += other.total_material_used;
+
+        // Recalculate utilization
+        if self.total_material_used > 0.0 {
+            self.utilization = self.total_piece_area / self.total_material_used;
+        }
+    }
+
+    /// Sets strip statistics.
+    pub fn with_strip_stats(mut self, stats: Vec<StripStats>) -> Self {
+        self.strip_stats = stats;
+        self
+    }
+
+    /// Calculates and sets utilization from strip stats.
+    /// This is the accurate utilization based on actual material consumed.
+    pub fn calculate_utilization(&mut self) {
+        if self.strip_stats.is_empty() {
+            return;
+        }
+
+        self.total_piece_area = self.strip_stats.iter().map(|s| s.piece_area).sum();
+        self.total_material_used = self
+            .strip_stats
+            .iter()
+            .map(|s| s.strip_width * s.used_length)
+            .sum();
+
+        if self.total_material_used > 0.0 {
+            self.utilization = self.total_piece_area / self.total_material_used;
+        }
     }
 }
 

@@ -182,6 +182,7 @@ impl BenchmarkRunner {
                             geometries.len(),
                             elapsed,
                         )
+                        .with_utilization(solve_result.utilization)
                         .with_placements(placement_infos);
 
                         if let Some(best) = dataset.best_known {

@@ -60,7 +60,9 @@ impl RunResult {
         total_pieces: usize,
         time_ms: u64,
     ) -> Self {
-        let utilization = if strip_length > 0.0 {
+        // Default utilization based on placement ratio
+        // This should be overwritten with actual material utilization via with_utilization()
+        let utilization = if total_pieces > 0 {
             pieces_placed as f64 / total_pieces as f64
         } else {
             0.0
@@ -81,6 +83,12 @@ impl RunResult {
             gap_percent: None,
             placements: None,
         }
+    }
+
+    /// Sets the actual material utilization from SolveResult.
+    pub fn with_utilization(mut self, utilization: f64) -> Self {
+        self.utilization = utilization;
+        self
     }
 
     /// Sets the placements for visualization.
