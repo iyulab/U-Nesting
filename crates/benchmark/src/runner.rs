@@ -3,7 +3,7 @@
 use crate::dataset::{Dataset, ExpandedItem, Shape};
 use crate::result::{BenchmarkResult, RunResult};
 use instant::Instant;
-use u_nesting_core::{Config, Solver, Strategy};
+use u_nesting_core::{Config, Strategy};
 use u_nesting_d2::{Boundary2D, Geometry2D, Nester2D};
 
 /// Configuration for benchmark runs.
@@ -147,7 +147,8 @@ impl BenchmarkRunner {
                 let nester = Nester2D::new(solver_config);
 
                 let start = Instant::now();
-                let result = nester.solve(&geometries, &boundary);
+                // Use multi-strip solve to automatically handle overflow
+                let result = nester.solve_multi_strip(&geometries, &boundary);
                 let elapsed = start.elapsed().as_millis() as u64;
 
                 match result {
@@ -196,11 +197,12 @@ impl BenchmarkRunner {
 
                         if self.config.show_progress {
                             println!(
-                                "    Run {}: length={:.2}, placed={}/{}, time={}ms",
+                                "    Run {}: length={:.2}, placed={}/{}, strips={}, time={}ms",
                                 run_idx + 1,
                                 strip_length,
                                 solve_result.placements.len(),
                                 geometries.len(),
+                                solve_result.boundaries_used,
                                 elapsed
                             );
                         }

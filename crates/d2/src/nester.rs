@@ -971,6 +971,108 @@ impl Nester2D {
 
         Ok(result)
     }
+
+    /// Solves nesting with automatic multi-strip support.
+    ///
+    /// When items don't fit in a single strip, automatically creates additional strips.
+    /// Each placement's `boundary_index` indicates which strip it belongs to.
+    /// Positions are adjusted so that strip N items have x offset of N * strip_width.
+    pub fn solve_multi_strip(
+        &self,
+        geometries: &[Geometry2D],
+        boundary: &Boundary2D,
+    ) -> Result<SolveResult<f64>> {
+        boundary.validate()?;
+        self.cancelled.store(false, Ordering::Relaxed);
+
+        let (b_min, b_max) = boundary.aabb();
+        let strip_width = b_max[0] - b_min[0];
+
+        let mut final_result = SolveResult::new();
+        let mut remaining_geometries: Vec<Geometry2D> = geometries.to_vec();
+        let mut strip_index = 0;
+        let max_strips = 100; // Safety limit
+
+        while !remaining_geometries.is_empty() && strip_index < max_strips {
+            if self.cancelled.load(Ordering::Relaxed) {
+                break;
+            }
+
+            // Solve on current strip
+            let strip_result = match self.config.strategy {
+                Strategy::BottomLeftFill => self.bottom_left_fill(&remaining_geometries, boundary),
+                Strategy::NfpGuided => self.nfp_guided_blf(&remaining_geometries, boundary),
+                Strategy::GeneticAlgorithm => self.genetic_algorithm(&remaining_geometries, boundary),
+                Strategy::Brkga => self.brkga(&remaining_geometries, boundary),
+                Strategy::SimulatedAnnealing => self.simulated_annealing(&remaining_geometries, boundary),
+                Strategy::Gdrr => self.gdrr(&remaining_geometries, boundary),
+                Strategy::Alns => self.alns(&remaining_geometries, boundary),
+                #[cfg(feature = "milp")]
+                Strategy::MilpExact => self.milp_exact(&remaining_geometries, boundary),
+                #[cfg(feature = "milp")]
+                Strategy::HybridExact => self.hybrid_exact(&remaining_geometries, boundary),
+                _ => self.nfp_guided_blf(&remaining_geometries, boundary),
+            }?;
+
+            if strip_result.placements.is_empty() {
+                // No progress - items too large for strip
+                final_result.unplaced.extend(strip_result.unplaced);
+                break;
+            }
+
+            // Collect placed geometry IDs
+            let placed_ids: std::collections::HashSet<_> = strip_result
+                .placements
+                .iter()
+                .map(|p| p.geometry_id.clone())
+                .collect();
+
+            // Adjust placements for this strip and add to final result
+            for mut placement in strip_result.placements {
+                // Offset x position by strip_index * strip_width
+                if !placement.position.is_empty() {
+                    placement.position[0] += strip_index as f64 * strip_width;
+                }
+                placement.boundary_index = strip_index;
+                final_result.placements.push(placement);
+            }
+
+            // Update remaining geometries (those not placed)
+            remaining_geometries = remaining_geometries
+                .into_iter()
+                .filter(|g| !placed_ids.contains(g.id()))
+                .collect();
+
+            // Also handle quantity > 1: reduce quantity for partially placed items
+            // For now, we treat each geometry independently
+
+            strip_index += 1;
+        }
+
+        final_result.boundaries_used = strip_index;
+        final_result.deduplicate_unplaced();
+
+        // Calculate overall utilization
+        let total_boundary_area = boundary.measure() * strip_index as f64;
+        if total_boundary_area > 0.0 {
+            let placed_area: f64 = final_result
+                .placements
+                .iter()
+                .filter_map(|p| {
+                    geometries
+                        .iter()
+                        .find(|g| g.id() == &p.geometry_id)
+                        .map(|g| {
+                            use u_nesting_core::geometry::Geometry;
+                            g.measure()
+                        })
+                })
+                .sum();
+            final_result.utilization = placed_area / total_boundary_area;
+        }
+
+        Ok(final_result)
+    }
 }
 
 /// Computes the centroid of a polygon.
