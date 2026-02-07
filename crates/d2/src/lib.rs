@@ -73,6 +73,7 @@ pub mod nfp;
 #[cfg(feature = "milp")]
 pub mod nfp_cm_solver;
 pub mod nfp_sliding;
+pub mod placement_utils;
 pub mod sa_nesting;
 pub mod spatial_index;
 

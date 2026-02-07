@@ -29,6 +29,7 @@ use u_nesting_core::sa::SaConfig;
 use u_nesting_core::solver::{Config, ProgressCallback, ProgressInfo, Solver, Strategy};
 use u_nesting_core::{Placement, Result, SolveResult};
 
+use crate::placement_utils::{expand_nfp, shrink_ifp};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
@@ -436,82 +437,12 @@ impl Nester2D {
 
     /// Expands an NFP by the given spacing amount.
     fn expand_nfp(&self, nfp: &Nfp, spacing: f64) -> Nfp {
-        if spacing <= 0.0 {
-            return nfp.clone();
-        }
-
-        // Simple expansion: offset each polygon outward
-        // For a proper implementation, this should use polygon offsetting
-        // For now, we use a conservative approximation
-        let expanded_polygons: Vec<Vec<(f64, f64)>> = nfp
-            .polygons
-            .iter()
-            .map(|polygon| {
-                // Compute centroid
-                let (cx, cy) = polygon_centroid(polygon);
-
-                // Offset each vertex away from centroid
-                polygon
-                    .iter()
-                    .map(|&(x, y)| {
-                        let dx = x - cx;
-                        let dy = y - cy;
-                        let dist = (dx * dx + dy * dy).sqrt();
-                        if dist > 1e-10 {
-                            let scale = (dist + spacing) / dist;
-                            (cx + dx * scale, cy + dy * scale)
-                        } else {
-                            (x, y)
-                        }
-                    })
-                    .collect()
-            })
-            .collect();
-
-        Nfp::from_polygons(expanded_polygons)
+        expand_nfp(nfp, spacing)
     }
 
     /// Shrinks an IFP by the given spacing amount.
     fn shrink_ifp(&self, ifp: &Nfp, spacing: f64) -> Nfp {
-        if spacing <= 0.0 {
-            return ifp.clone();
-        }
-
-        // Simple shrinking: offset each polygon inward
-        let shrunk_polygons: Vec<Vec<(f64, f64)>> = ifp
-            .polygons
-            .iter()
-            .filter_map(|polygon| {
-                // Compute centroid
-                let (cx, cy) = polygon_centroid(polygon);
-
-                // Offset each vertex toward centroid
-                let shrunk: Vec<(f64, f64)> = polygon
-                    .iter()
-                    .map(|&(x, y)| {
-                        let dx = x - cx;
-                        let dy = y - cy;
-                        let dist = (dx * dx + dy * dy).sqrt();
-                        if dist > spacing + 1e-10 {
-                            let scale = (dist - spacing) / dist;
-                            (cx + dx * scale, cy + dy * scale)
-                        } else {
-                            // Point too close to centroid, collapse to centroid
-                            (cx, cy)
-                        }
-                    })
-                    .collect();
-
-                // Only keep polygon if it still has area
-                if shrunk.len() >= 3 {
-                    Some(shrunk)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        Nfp::from_polygons(shrunk_polygons)
+        shrink_ifp(ifp, spacing)
     }
 
     /// Genetic Algorithm based nesting optimization.
@@ -1270,19 +1201,6 @@ impl Nester2D {
     }
 }
 
-/// Computes the centroid of a polygon.
-fn polygon_centroid(polygon: &[(f64, f64)]) -> (f64, f64) {
-    if polygon.is_empty() {
-        return (0.0, 0.0);
-    }
-
-    let sum: (f64, f64) = polygon
-        .iter()
-        .fold((0.0, 0.0), |acc, &(x, y)| (acc.0 + x, acc.1 + y));
-    let n = polygon.len() as f64;
-    (sum.0 / n, sum.1 / n)
-}
-
 impl Solver for Nester2D {
     type Geometry = Geometry2D;
     type Boundary = Boundary2D;
@@ -1395,6 +1313,7 @@ impl Solver for Nester2D {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::placement_utils::polygon_centroid;
 
     #[test]
     fn test_simple_nesting() {

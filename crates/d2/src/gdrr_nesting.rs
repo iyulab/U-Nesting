@@ -32,17 +32,8 @@ use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::solver::Config;
 use u_nesting_core::{Placement, SolveResult};
 
+use crate::placement_utils::{expand_nfp, shrink_ifp, InstanceInfo};
 use rand::prelude::*;
-
-/// Instance information for decoding.
-#[derive(Debug, Clone)]
-struct InstanceInfo {
-    /// Index into the geometries array.
-    geometry_idx: usize,
-    /// Instance number within this geometry's quantity.
-    #[allow(dead_code)]
-    instance_num: usize,
-}
 
 /// A placed item in the GDRR solution.
 #[derive(Debug, Clone)]
@@ -722,87 +713,6 @@ pub fn run_gdrr_nesting(
     result.strategy = Some("GDRR".to_string());
 
     result
-}
-
-/// Expands an NFP by the given spacing amount.
-fn expand_nfp(nfp: &Nfp, spacing: f64) -> Nfp {
-    if spacing <= 0.0 {
-        return nfp.clone();
-    }
-
-    let expanded_polygons: Vec<Vec<(f64, f64)>> = nfp
-        .polygons
-        .iter()
-        .map(|polygon| {
-            let (cx, cy) = polygon_centroid(polygon);
-            polygon
-                .iter()
-                .map(|&(x, y)| {
-                    let dx = x - cx;
-                    let dy = y - cy;
-                    let dist = (dx * dx + dy * dy).sqrt();
-                    if dist > 1e-10 {
-                        let scale = (dist + spacing) / dist;
-                        (cx + dx * scale, cy + dy * scale)
-                    } else {
-                        (x, y)
-                    }
-                })
-                .collect()
-        })
-        .collect();
-
-    Nfp::from_polygons(expanded_polygons)
-}
-
-/// Shrinks an IFP by the given spacing amount.
-fn shrink_ifp(ifp: &Nfp, spacing: f64) -> Nfp {
-    if spacing <= 0.0 {
-        return ifp.clone();
-    }
-
-    let shrunk_polygons: Vec<Vec<(f64, f64)>> = ifp
-        .polygons
-        .iter()
-        .filter_map(|polygon| {
-            let (cx, cy) = polygon_centroid(polygon);
-            let shrunk: Vec<(f64, f64)> = polygon
-                .iter()
-                .map(|&(x, y)| {
-                    let dx = x - cx;
-                    let dy = y - cy;
-                    let dist = (dx * dx + dy * dy).sqrt();
-                    if dist > spacing + 1e-10 {
-                        let scale = (dist - spacing) / dist;
-                        (cx + dx * scale, cy + dy * scale)
-                    } else {
-                        (cx, cy)
-                    }
-                })
-                .collect();
-
-            if shrunk.len() >= 3 {
-                Some(shrunk)
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    Nfp::from_polygons(shrunk_polygons)
-}
-
-/// Computes the centroid of a polygon.
-fn polygon_centroid(polygon: &[(f64, f64)]) -> (f64, f64) {
-    if polygon.is_empty() {
-        return (0.0, 0.0);
-    }
-
-    let sum: (f64, f64) = polygon
-        .iter()
-        .fold((0.0, 0.0), |acc, &(x, y)| (acc.0 + x, acc.1 + y));
-    let n = polygon.len() as f64;
-    (sum.0 / n, sum.1 / n)
 }
 
 #[cfg(test)]

@@ -34,6 +34,8 @@ use u_nesting_core::geometry::Geometry2DExt;
 use u_nesting_core::robust::{orient2d_filtered, Orientation};
 use u_nesting_core::{Error, Result};
 
+use crate::placement_utils::polygon_centroid;
+
 /// Rotates an NFP around the origin by the given angle (in radians).
 ///
 /// This is used when computing NFP with relative rotation and then
@@ -600,14 +602,6 @@ fn bounding_box(polygon: &[(f64, f64)]) -> (f64, f64, f64, f64) {
     }
 
     (min_x, min_y, max_x, max_y)
-}
-
-/// Computes polygon centroid.
-fn polygon_centroid(polygon: &[(f64, f64)]) -> (f64, f64) {
-    let n = polygon.len() as f64;
-    let sum_x: f64 = polygon.iter().map(|p| p.0).sum();
-    let sum_y: f64 = polygon.iter().map(|p| p.1).sum();
-    (sum_x / n, sum_y / n)
 }
 
 /// Computes NFP for two convex polygons using Minkowski sum.

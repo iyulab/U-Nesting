@@ -17,6 +17,8 @@ use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::solver::{Config, ProgressCallback, ProgressInfo};
 use u_nesting_core::{Placement, SolveResult};
 
+use crate::placement_utils::{expand_nfp, nesting_fitness, shrink_ifp, InstanceInfo};
+
 /// Nesting chromosome representing a placement order and rotations.
 #[derive(Debug, Clone)]
 pub struct NestingChromosome {
@@ -193,15 +195,6 @@ impl Individual for NestingChromosome {
             self.rotation_mutate(4, rng);
         }
     }
-}
-
-/// Instance information for decoding.
-#[derive(Debug, Clone)]
-struct InstanceInfo {
-    /// Index into the geometries array.
-    geometry_idx: usize,
-    /// Instance number within this geometry's quantity.
-    instance_num: usize,
 }
 
 /// Problem definition for GA-based 2D nesting.
@@ -421,84 +414,13 @@ impl NestingProblem {
 
     /// Expands an NFP by the given spacing amount.
     fn expand_nfp(&self, nfp: &Nfp, spacing: f64) -> Nfp {
-        if spacing <= 0.0 {
-            return nfp.clone();
-        }
-
-        let expanded_polygons: Vec<Vec<(f64, f64)>> = nfp
-            .polygons
-            .iter()
-            .map(|polygon| {
-                let (cx, cy) = polygon_centroid(polygon);
-                polygon
-                    .iter()
-                    .map(|&(x, y)| {
-                        let dx = x - cx;
-                        let dy = y - cy;
-                        let dist = (dx * dx + dy * dy).sqrt();
-                        if dist > 1e-10 {
-                            let scale = (dist + spacing) / dist;
-                            (cx + dx * scale, cy + dy * scale)
-                        } else {
-                            (x, y)
-                        }
-                    })
-                    .collect()
-            })
-            .collect();
-
-        Nfp::from_polygons(expanded_polygons)
+        expand_nfp(nfp, spacing)
     }
 
     /// Shrinks an IFP by the given spacing amount.
     fn shrink_ifp(&self, ifp: &Nfp, spacing: f64) -> Nfp {
-        if spacing <= 0.0 {
-            return ifp.clone();
-        }
-
-        let shrunk_polygons: Vec<Vec<(f64, f64)>> = ifp
-            .polygons
-            .iter()
-            .filter_map(|polygon| {
-                let (cx, cy) = polygon_centroid(polygon);
-                let shrunk: Vec<(f64, f64)> = polygon
-                    .iter()
-                    .map(|&(x, y)| {
-                        let dx = x - cx;
-                        let dy = y - cy;
-                        let dist = (dx * dx + dy * dy).sqrt();
-                        if dist > spacing + 1e-10 {
-                            let scale = (dist - spacing) / dist;
-                            (cx + dx * scale, cy + dy * scale)
-                        } else {
-                            (cx, cy)
-                        }
-                    })
-                    .collect();
-
-                if shrunk.len() >= 3 {
-                    Some(shrunk)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        Nfp::from_polygons(shrunk_polygons)
+        shrink_ifp(ifp, spacing)
     }
-}
-
-/// Computes the centroid of a polygon.
-fn polygon_centroid(polygon: &[(f64, f64)]) -> (f64, f64) {
-    if polygon.is_empty() {
-        return (0.0, 0.0);
-    }
-
-    let sum: (f64, f64) = polygon
-        .iter()
-        .fold((0.0, 0.0), |acc, &(x, y)| (acc.0 + x, acc.1 + y));
-    let n = polygon.len() as f64;
-    (sum.0 / n, sum.1 / n)
 }
 
 impl GaProblem for NestingProblem {
@@ -506,14 +428,7 @@ impl GaProblem for NestingProblem {
 
     fn evaluate(&self, individual: &mut Self::Individual) {
         let (_, utilization, placed_count) = self.decode(individual);
-
-        // Fitness = utilization + bonus for placing all pieces
-        let placement_ratio = placed_count as f64 / individual.total_count.max(1) as f64;
-
-        // Primary: maximize placement ratio (most important)
-        // Secondary: maximize utilization
-        let fitness = placement_ratio * 100.0 + utilization * 10.0;
-
+        let fitness = nesting_fitness(placed_count, individual.total_count, utilization);
         individual.set_fitness(fitness, placed_count);
     }
 

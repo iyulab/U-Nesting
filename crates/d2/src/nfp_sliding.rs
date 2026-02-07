@@ -26,6 +26,7 @@ use u_nesting_core::robust::orient2d_filtered;
 use u_nesting_core::{Error, Result};
 
 use crate::nfp::Nfp;
+use crate::placement_utils::polygon_centroid;
 
 // ============================================================================
 // Contact Types and TouchingGroup
@@ -1096,14 +1097,6 @@ fn recover_contact(
     }
 
     None
-}
-
-/// Computes polygon centroid.
-fn polygon_centroid(polygon: &[(f64, f64)]) -> (f64, f64) {
-    let n = polygon.len() as f64;
-    let sum_x: f64 = polygon.iter().map(|p| p.0).sum();
-    let sum_y: f64 = polygon.iter().map(|p| p.1).sum();
-    (sum_x / n, sum_y / n)
 }
 
 /// Ensures polygon is in counter-clockwise order.
