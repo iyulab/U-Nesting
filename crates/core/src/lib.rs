@@ -103,3 +103,37 @@ pub mod metaheur {
     pub use u_metaheur::brkga as generic_brkga;
     pub use u_metaheur::alns as generic_alns;
 }
+
+/// Re-exports from `u-geometry` for direct access to generic computational geometry.
+///
+/// Consumers can use these to access domain-agnostic geometry primitives,
+/// robust predicates, collision detection, and spatial indexing from u-geometry.
+///
+/// The nesting-specific geometry types in this crate's `geometry`, `transform`,
+/// and `robust` modules are generic over `RealField` and include serde support,
+/// while u-geometry provides `f64`-specialized implementations with richer
+/// operations (Minkowski sum, NFP, SAT collision, spatial indexing).
+///
+/// ## Usage
+///
+/// ```rust,ignore
+/// use u_nesting_core::geom;
+///
+/// // Access u-geometry primitives
+/// let p = geom::primitives::Point2::new(1.0, 2.0);
+///
+/// // Access u-geometry polygon operations
+/// let area = geom::polygon::signed_area(&[(0.0,0.0), (10.0,0.0), (10.0,10.0)]);
+///
+/// // Access u-geometry collision detection
+/// let overlap = geom::collision::aabb2_overlap(&aabb_a, &aabb_b);
+/// ```
+pub mod geom {
+    pub use u_geometry::primitives;
+    pub use u_geometry::polygon;
+    pub use u_geometry::transform as generic_transform;
+    pub use u_geometry::robust as generic_robust;
+    pub use u_geometry::collision;
+    pub use u_geometry::minkowski;
+    pub use u_geometry::spatial_index;
+}
