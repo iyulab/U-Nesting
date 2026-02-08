@@ -11,7 +11,6 @@ keywords = ["nesting", "bin-packing", "optimization", "geometry"]
 categories = ["algorithms", "mathematics"]
 
 [dependencies]
-nalgebra.workspace = true
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
 rayon.workspace = true
@@ -27,4 +26,4 @@ approx.workspace = true
 
 [features]
 default = []
-serde = ["dep:serde", "nalgebra/serde-serialize"]
+serde = ["dep:serde", "u-geometry/serde"]

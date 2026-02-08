@@ -13,7 +13,6 @@ categories = ["algorithms", "mathematics"]
 [dependencies]
 u-nesting-core.workspace = true
 parry3d.workspace = true
-nalgebra.workspace = true
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
 rayon.workspace = true
@@ -27,7 +26,7 @@ criterion.workspace = true
 
 [features]
 default = []
-serde = ["dep:serde", "u-nesting-core/serde", "nalgebra/serde-serialize"]
+serde = ["dep:serde", "u-nesting-core/serde"]
 
 [[bench]]
 name = "packer_bench"

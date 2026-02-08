@@ -16,7 +16,6 @@ geo.workspace = true
 geo-types.workspace = true
 i_overlay.workspace = true
 parry2d.workspace = true
-nalgebra.workspace = true
 rstar.workspace = true
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
@@ -34,7 +33,7 @@ criterion.workspace = true
 
 [features]
 default = []
-serde = ["dep:serde", "u-nesting-core/serde", "geo/use-serde", "nalgebra/serde-serialize"]
+serde = ["dep:serde", "u-nesting-core/serde", "geo/use-serde"]
 milp = ["dep:good_lp"]
 
 [[bench]]

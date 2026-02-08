@@ -28,7 +28,6 @@ geo-types = "0.7"
 i_overlay = "1.9"
 parry2d = "0.17"
 parry3d = "0.17"
-nalgebra = "0.33"
 rstar = "0.12"
 
 # Serialization
