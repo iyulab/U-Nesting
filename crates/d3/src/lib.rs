@@ -77,6 +77,7 @@ pub mod extreme_point;
 pub mod ga_packing;
 pub mod geometry;
 pub mod packer;
+pub mod packing_utils;
 pub mod physics;
 pub mod sa_packing;
 pub mod spatial_index;
