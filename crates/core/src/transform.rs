@@ -1,6 +1,9 @@
 //! Transform types for 2D and 3D coordinate transformations.
 
-use nalgebra::{Isometry2, Isometry3, Point2, Point3, RealField, Rotation3, Vector2, Vector3};
+use u_geometry::nalgebra_types::{
+    Isometry2, Isometry3, NaPoint2 as Point2, NaPoint3 as Point3, NaVector2 as Vector2,
+    NaVector3 as Vector3, RealField, Rotation3,
+};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

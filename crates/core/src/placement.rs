@@ -119,7 +119,7 @@ impl<S: Copy + Default> Placement<S> {
     }
 }
 
-impl<S: nalgebra::RealField + Copy + Default> Placement<S> {
+impl<S: u_geometry::nalgebra_types::RealField + Copy + Default> Placement<S> {
     /// Converts a 2D placement to a Transform2D.
     pub fn to_transform_2d(&self) -> Transform2D<S> {
         Transform2D::new(self.x(), self.y(), self.angle())

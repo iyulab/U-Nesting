@@ -1,6 +1,6 @@
 //! 3D geometry types.
 
-use nalgebra::Vector3;
+use u_nesting_core::geom::nalgebra_types::NaVector3 as Vector3;
 use u_nesting_core::geometry::{Geometry, GeometryId, RotationConstraint};
 use u_nesting_core::{Error, Result};
 

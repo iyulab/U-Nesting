@@ -4,7 +4,7 @@
 //! algorithm using axis-aligned bounding box (AABB) trees.
 
 use crate::geometry::Geometry3D;
-use nalgebra::Vector3;
+use u_nesting_core::geom::nalgebra_types::NaVector3 as Vector3;
 use u_nesting_core::geometry::Geometry;
 
 /// Simple 3D AABB (Axis-Aligned Bounding Box).

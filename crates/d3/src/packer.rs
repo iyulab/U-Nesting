@@ -8,7 +8,7 @@ use crate::geometry::Geometry3D;
 use crate::physics::{PhysicsConfig, PhysicsSimulator};
 use crate::sa_packing::run_sa_packing;
 use crate::stability::{PlacedBox, StabilityAnalyzer, StabilityConstraint, StabilityReport};
-use nalgebra::{Point3, Vector3};
+use u_nesting_core::geom::nalgebra_types::{NaPoint3 as Point3, NaVector3 as Vector3};
 use u_nesting_core::brkga::BrkgaConfig;
 use u_nesting_core::ga::GaConfig;
 use u_nesting_core::geometry::{Boundary, Geometry};

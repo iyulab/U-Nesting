@@ -136,4 +136,5 @@ pub mod geom {
     pub use u_geometry::collision;
     pub use u_geometry::minkowski;
     pub use u_geometry::spatial_index;
+    pub use u_geometry::nalgebra_types;
 }

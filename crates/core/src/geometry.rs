@@ -2,7 +2,7 @@
 
 use crate::transform::{AABB2D, AABB3D};
 use crate::Result;
-use nalgebra::RealField;
+use u_geometry::nalgebra_types::RealField;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
