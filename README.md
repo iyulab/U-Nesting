@@ -6,7 +6,7 @@
 [![docs.rs](https://docs.rs/u-nesting/badge.svg)](https://docs.rs/u-nesting)
 [![Build Status](https://github.com/iyulab/U-Nesting/actions/workflows/ci.yml/badge.svg)](https://github.com/iyulab/U-Nesting/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
-[![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/rust-1.82+-orange.svg)](https://www.rust-lang.org/)
 
 <p align="center">
   <img src="assets/U-Nesting.gif" alt="U-Nesting Demo" width="800">
