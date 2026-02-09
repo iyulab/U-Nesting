@@ -1,4 +1,20 @@
 //! Simulated Annealing framework for optimization.
+//!
+//! # Architecture
+//!
+//! This module maintains its own SA loop rather than delegating to u-metaheur's
+//! SA runner. u-metaheur uses `cost(&self, &Solution) -> f64` (immutable),
+//! while u-nesting uses `evaluate(&self, &mut Solution)` (mutable) for
+//! consistency with the GA/BRKGA evaluation pattern.
+//!
+//! Additionally, this module provides features not available in u-metaheur SA:
+//! - `NeighborhoodOperator` enum (5 operators) with `available_operators()`
+//! - `PermutationSolution` with built-in swap/relocate/inversion/rotation/chain
+//! - Reheating with configurable threshold and factor
+//! - Adaptive cooling schedule
+//! - Parallel multi-restart via `run_parallel()`
+//!
+//! The rand 0.9 API is shared with u-metaheur for ecosystem compatibility.
 
 use rand::prelude::*;
 use rayon::prelude::*;

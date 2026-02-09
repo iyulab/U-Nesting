@@ -2,6 +2,20 @@
 //!
 //! Implementation of the ALNS metaheuristic based on Ropke & Pisinger (2006).
 //!
+//! # Architecture
+//!
+//! This module maintains its own ALNS loop rather than delegating to u-metaheur's
+//! ALNS runner. Key design differences:
+//! - u-metaheur uses functional operators (`destroy(&self, &S) -> S`) as separate
+//!   trait objects; u-nesting integrates operators into `AlnsProblem` with mutable
+//!   access (`destroy(&mut self, &mut Solution)`) for stateful placement caches.
+//! - u-metaheur uses `cost(&self, &S) -> f64`; u-nesting uses `AlnsSolution::fitness()`.
+//! - u-nesting provides `relatedness()` for Shaw-based removal, not in u-metaheur.
+//!
+//! The rand 0.9 API is shared with u-metaheur for ecosystem compatibility.
+//!
+//! # Algorithm
+//!
 //! ALNS combines:
 //! - **Destroy operators**: Remove items from current solution (multiple strategies)
 //! - **Repair operators**: Reinsert items to improve solution (multiple strategies)

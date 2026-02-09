@@ -2,6 +2,16 @@
 //!
 //! Implementation of the GDRR metaheuristic based on Gardeyn & Wauters (EJOR 2022).
 //!
+//! # Architecture
+//!
+//! GDRR is unique to u-nesting — u-metaheur does not provide a GDRR runner.
+//! This module is domain-specific with goal-driven bin shrinking (decreasing
+//! area/volume limits) and nesting-aware ruin/recreate operators.
+//!
+//! The rand 0.9 API is shared with u-metaheur for ecosystem compatibility.
+//!
+//! # Algorithm
+//!
 //! GDRR combines:
 //! - **Ruin operators**: Remove items from current solution (Random, Cluster, Worst)
 //! - **Recreate operators**: Reinsert items to improve solution (BestFit, BLF, NFP)

@@ -3,6 +3,16 @@
 //! BRKGA is a variant of genetic algorithms that uses random-key encoding
 //! and biased crossover to favor elite parents.
 //!
+//! # Architecture
+//!
+//! This module maintains its own BRKGA loop rather than delegating to
+//! u-metaheur's `BrkgaDecoder`. u-metaheur uses `decode(&self, &[f64]) -> f64`
+//! (immutable, returns cost), while u-nesting uses `evaluate(&self, &mut
+//! RandomKeyChromosome)` (mutable) to update cached fitness on the chromosome.
+//! This allows the framework to track generation callbacks via `on_generation()`.
+//!
+//! The rand 0.9 API is shared with u-metaheur for ecosystem compatibility.
+//!
 //! # Key Features
 //!
 //! - **Random-key encoding**: Each gene is a float in [0, 1)
