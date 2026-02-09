@@ -218,11 +218,7 @@ mod tests {
     #[test]
     fn test_shrink_ifp_collapse() {
         // Very small polygon that collapses with spacing
-        let ifp = Nfp::from_polygons(vec![vec![
-            (0.0, 0.0),
-            (1.0, 0.0),
-            (0.5, 0.5),
-        ]]);
+        let ifp = Nfp::from_polygons(vec![vec![(0.0, 0.0), (1.0, 0.0), (0.5, 0.5)]]);
         let shrunk = shrink_ifp(&ifp, 10.0);
         // Should collapse to empty (all vertices become centroid, < 3 unique)
         // The shrunk polygon may still have 3 points (all at centroid)

@@ -23,8 +23,8 @@
 //! let report = analyzer.analyze(&placements, &geometries);
 //! ```
 
-use u_nesting_core::geom::nalgebra_types::{NaPoint3 as Point3, NaVector3 as Vector3};
 use std::collections::HashMap;
+use u_nesting_core::geom::nalgebra_types::{NaPoint3 as Point3, NaVector3 as Vector3};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

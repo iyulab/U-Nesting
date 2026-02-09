@@ -641,7 +641,11 @@ mod tests {
 
         fn crossover<R: Rng>(&self, other: &Self, rng: &mut R) -> Self {
             Self {
-                value: if rng.random() { self.value } else { other.value },
+                value: if rng.random() {
+                    self.value
+                } else {
+                    other.value
+                },
             }
         }
 

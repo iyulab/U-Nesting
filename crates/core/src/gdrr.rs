@@ -389,7 +389,8 @@ impl GdrrRunner {
             }
 
             // Select ruin ratio
-            let ruin_ratio = rng.random_range(self.config.min_ruin_ratio..=self.config.max_ruin_ratio);
+            let ruin_ratio =
+                rng.random_range(self.config.min_ruin_ratio..=self.config.max_ruin_ratio);
 
             // Select ruin operator using roulette wheel
             let ruin_roll: f64 = rng.random::<f64>() * total_ruin_weight;

@@ -17,9 +17,9 @@
 
 use crate::boundary::Boundary3D;
 use crate::geometry::Geometry3D;
-use u_nesting_core::geom::nalgebra_types::NaVector3 as Vector3;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use u_nesting_core::geom::nalgebra_types::NaVector3 as Vector3;
 use u_nesting_core::geometry::{Boundary, Geometry};
 
 /// A 3D point representing a potential placement position.

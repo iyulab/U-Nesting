@@ -343,7 +343,14 @@ mod tests {
             })
             .collect();
 
-        let result = layer_place_items(&items, &instances, &geometries, &boundary, &config, &cancelled);
+        let result = layer_place_items(
+            &items,
+            &instances,
+            &geometries,
+            &boundary,
+            &config,
+            &cancelled,
+        );
 
         assert_eq!(result.placed_count, 2);
         assert_eq!(result.placements.len(), 2);
@@ -365,7 +372,14 @@ mod tests {
             })
             .collect();
 
-        let result = layer_place_items(&items, &instances, &geometries, &boundary, &config, &cancelled);
+        let result = layer_place_items(
+            &items,
+            &instances,
+            &geometries,
+            &boundary,
+            &config,
+            &cancelled,
+        );
 
         assert_eq!(result.placed_count, 0);
     }
@@ -387,7 +401,14 @@ mod tests {
             })
             .collect();
 
-        let result = layer_place_items(&items, &instances, &geometries, &boundary, &config, &cancelled);
+        let result = layer_place_items(
+            &items,
+            &instances,
+            &geometries,
+            &boundary,
+            &config,
+            &cancelled,
+        );
 
         // Max 2 boxes at 100kg each within 250kg limit
         assert!(result.placed_count <= 2);

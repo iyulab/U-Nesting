@@ -255,8 +255,7 @@ impl AlnsNestingProblem {
                 {
                     // Only verify overlap if clamping changed the position
                     // The original NFP-found position is already collision-free by definition
-                    let was_clamped =
-                        (clamped_x - x).abs() > 1e-6 || (clamped_y - y).abs() > 1e-6;
+                    let was_clamped = (clamped_x - x).abs() > 1e-6 || (clamped_y - y).abs() > 1e-6;
                     if was_clamped {
                         // Verify no actual polygon overlap using SAT
                         if !verify_no_overlap(

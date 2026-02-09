@@ -502,13 +502,21 @@ impl AlnsRunner {
 
             let best_destroy = destroy_stats
                 .iter()
-                .max_by(|a, b| a.1.weight.partial_cmp(&b.1.weight).unwrap_or(std::cmp::Ordering::Equal))
+                .max_by(|a, b| {
+                    a.1.weight
+                        .partial_cmp(&b.1.weight)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                })
                 .map(|(op, _)| *op)
                 .unwrap_or(DestroyOperatorId::Random);
 
             let best_repair = repair_stats
                 .iter()
-                .max_by(|a, b| a.1.weight.partial_cmp(&b.1.weight).unwrap_or(std::cmp::Ordering::Equal))
+                .max_by(|a, b| {
+                    a.1.weight
+                        .partial_cmp(&b.1.weight)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                })
                 .map(|(op, _)| *op)
                 .unwrap_or(RepairOperatorId::Greedy);
 

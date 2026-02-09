@@ -8,9 +8,9 @@ use crate::geometry::Geometry3D;
 use crate::physics::{PhysicsConfig, PhysicsSimulator};
 use crate::sa_packing::run_sa_packing;
 use crate::stability::{PlacedBox, StabilityAnalyzer, StabilityConstraint, StabilityReport};
-use u_nesting_core::geom::nalgebra_types::{NaPoint3 as Point3, NaVector3 as Vector3};
 use u_nesting_core::brkga::BrkgaConfig;
 use u_nesting_core::ga::GaConfig;
+use u_nesting_core::geom::nalgebra_types::{NaPoint3 as Point3, NaVector3 as Vector3};
 use u_nesting_core::geometry::{Boundary, Geometry};
 use u_nesting_core::sa::SaConfig;
 use u_nesting_core::solver::{Config, ProgressCallback, ProgressInfo, Solver, Strategy};
@@ -211,10 +211,7 @@ impl Packer3D {
                     let is_better = match &best_fit {
                         None => true,
                         Some((_, _, _, bg_height, bx, by, bz, _, _)) => {
-                            let best_score = bz * 1000000.0
-                                + by * 1000.0
-                                + bx
-                                + bg_height * 0.1;
+                            let best_score = bz * 1000000.0 + by * 1000.0 + bx + bg_height * 0.1;
                             score < best_score
                         }
                     };
@@ -541,10 +538,7 @@ impl Packer3D {
                     let is_better = match &best_fit {
                         None => true,
                         Some((_, _, _, bg_height, bx, by, bz, _, _)) => {
-                            let best_score = bz * 1000000.0
-                                + by * 1000.0
-                                + bx
-                                + bg_height * 0.1;
+                            let best_score = bz * 1000000.0 + by * 1000.0 + bx + bg_height * 0.1;
                             score < best_score
                         }
                     };

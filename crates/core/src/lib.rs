@@ -98,10 +98,10 @@ pub use transform::{Transform2D, Transform3D, AABB2D, AABB3D};
 /// this crate's `ga`, `sa`, `brkga`, `alns` modules provide nesting-tailored
 /// abstractions.
 pub mod metaheur {
+    pub use u_metaheur::alns as generic_alns;
+    pub use u_metaheur::brkga as generic_brkga;
     pub use u_metaheur::ga as generic_ga;
     pub use u_metaheur::sa as generic_sa;
-    pub use u_metaheur::brkga as generic_brkga;
-    pub use u_metaheur::alns as generic_alns;
 }
 
 /// Re-exports from `u-geometry` for direct access to generic computational geometry.
@@ -129,12 +129,12 @@ pub mod metaheur {
 /// let overlap = geom::collision::aabb2_overlap(&aabb_a, &aabb_b);
 /// ```
 pub mod geom {
-    pub use u_geometry::primitives;
-    pub use u_geometry::polygon;
-    pub use u_geometry::transform as generic_transform;
-    pub use u_geometry::robust as generic_robust;
     pub use u_geometry::collision;
     pub use u_geometry::minkowski;
-    pub use u_geometry::spatial_index;
     pub use u_geometry::nalgebra_types;
+    pub use u_geometry::polygon;
+    pub use u_geometry::primitives;
+    pub use u_geometry::robust as generic_robust;
+    pub use u_geometry::spatial_index;
+    pub use u_geometry::transform as generic_transform;
 }

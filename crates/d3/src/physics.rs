@@ -26,8 +26,8 @@
 //! ```
 
 use crate::stability::{PlacedBox, StabilityAnalyzer, StabilityConstraint, StabilityReport};
-use u_nesting_core::geom::nalgebra_types::{NaPoint3 as Point3, NaVector3 as Vector3};
 use std::time::Instant;
+use u_nesting_core::geom::nalgebra_types::{NaPoint3 as Point3, NaVector3 as Vector3};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

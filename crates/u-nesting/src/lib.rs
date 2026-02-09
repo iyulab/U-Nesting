@@ -39,4 +39,4 @@ pub use u_nesting_d2 as d2;
 pub use u_nesting_d3 as d3;
 
 // Re-export commonly used types at root level
-pub use u_nesting_core::{Config, Placement, Solver, SolveResult, Strategy};
+pub use u_nesting_core::{Config, Placement, SolveResult, Solver, Strategy};

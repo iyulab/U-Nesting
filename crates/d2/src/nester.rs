@@ -1808,7 +1808,9 @@ mod tests {
         let config = Config::default().with_strategy(Strategy::BottomLeftFill);
         let nester = Nester2D::new(config);
 
-        let result = nester.solve(std::slice::from_ref(&gear_like), &boundary).unwrap();
+        let result = nester
+            .solve(std::slice::from_ref(&gear_like), &boundary)
+            .unwrap();
 
         assert_eq!(result.placements.len(), 1);
         let placement = &result.placements[0];
@@ -1883,7 +1885,9 @@ mod tests {
         let config = Config::default().with_strategy(Strategy::BottomLeftFill);
         let nester = Nester2D::new(config);
 
-        let result = nester.solve(std::slice::from_ref(&gear_like), &boundary).unwrap();
+        let result = nester
+            .solve(std::slice::from_ref(&gear_like), &boundary)
+            .unwrap();
 
         // Check that ALL placements are within bounds
         for (i, placement) in result.placements.iter().enumerate() {
@@ -2037,7 +2041,9 @@ mod tests {
         let config = Config::default().with_strategy(Strategy::BottomLeftFill);
         let nester = Nester2D::new(config);
 
-        let result = nester.solve(std::slice::from_ref(&gear), &boundary).unwrap();
+        let result = nester
+            .solve(std::slice::from_ref(&gear), &boundary)
+            .unwrap();
 
         println!("Placed {} pieces", result.placements.len());
 
