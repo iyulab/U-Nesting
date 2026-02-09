@@ -2,8 +2,9 @@
 
 fn main() {
     // Generate C header using cbindgen
-    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let out_dir = std::env::var("OUT_DIR").unwrap();
+    let crate_dir =
+        std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR must be set by Cargo");
+    let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR must be set by Cargo");
     let config = cbindgen::Config::from_file("cbindgen.toml").unwrap_or_default();
 
     if let Ok(bindings) = cbindgen::Builder::new()
