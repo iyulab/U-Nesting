@@ -847,60 +847,19 @@ fn rotate_polygon(polygon: &[(f64, f64)], angle: f64) -> Vec<(f64, f64)> {
 }
 
 /// Checks if a polygon is convex using robust orientation tests.
-///
-/// Uses robust geometric predicates for numerical stability.
 fn is_polygon_convex(polygon: &[(f64, f64)]) -> bool {
-    if polygon.len() < 3 {
-        return false;
-    }
-
-    let n = polygon.len();
-    let mut expected_orientation: Option<Orientation> = None;
-
-    for i in 0..n {
-        let p0 = polygon[i];
-        let p1 = polygon[(i + 1) % n];
-        let p2 = polygon[(i + 2) % n];
-
-        let o = orient2d_filtered(p0, p1, p2);
-
-        // Skip collinear edges
-        if o.is_collinear() {
-            continue;
-        }
-
-        match expected_orientation {
-            None => expected_orientation = Some(o),
-            Some(expected) if expected != o => return false,
-            _ => {}
-        }
-    }
-
-    true
+    geom_polygon::is_convex(polygon)
 }
 
 /// Ensures polygon vertices are in counter-clockwise order.
 fn ensure_ccw(polygon: &[(f64, f64)]) -> Vec<(f64, f64)> {
-    if signed_area(polygon) < 0.0 {
-        polygon.iter().rev().cloned().collect()
-    } else {
-        polygon.to_vec()
-    }
+    geom_polygon::ensure_ccw(polygon)
 }
 
 /// Computes the signed area of a polygon.
 /// Positive for counter-clockwise, negative for clockwise.
 fn signed_area(polygon: &[(f64, f64)]) -> f64 {
-    let n = polygon.len();
-    let mut area = 0.0;
-
-    for i in 0..n {
-        let j = (i + 1) % n;
-        area += polygon[i].0 * polygon[j].1;
-        area -= polygon[j].0 * polygon[i].1;
-    }
-
-    area / 2.0
+    geom_polygon::signed_area(polygon)
 }
 
 /// Computes convex hull of a set of points.
