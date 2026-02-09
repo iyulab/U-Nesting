@@ -1738,7 +1738,7 @@ mod tests {
     fn test_time_limit_honored() {
         // Create many geometries to ensure BLF takes measurable time
         let geometries: Vec<Geometry2D> = (0..100)
-            .map(|i| Geometry2D::rectangle(&format!("R{}", i), 5.0, 5.0))
+            .map(|i| Geometry2D::rectangle(format!("R{}", i), 5.0, 5.0))
             .collect();
         let boundary = Boundary2D::rectangle(1000.0, 1000.0);
 
@@ -1808,7 +1808,7 @@ mod tests {
         let config = Config::default().with_strategy(Strategy::BottomLeftFill);
         let nester = Nester2D::new(config);
 
-        let result = nester.solve(&[gear_like.clone()], &boundary).unwrap();
+        let result = nester.solve(std::slice::from_ref(&gear_like), &boundary).unwrap();
 
         assert_eq!(result.placements.len(), 1);
         let placement = &result.placements[0];
@@ -1883,7 +1883,7 @@ mod tests {
         let config = Config::default().with_strategy(Strategy::BottomLeftFill);
         let nester = Nester2D::new(config);
 
-        let result = nester.solve(&[gear_like.clone()], &boundary).unwrap();
+        let result = nester.solve(std::slice::from_ref(&gear_like), &boundary).unwrap();
 
         // Check that ALL placements are within bounds
         for (i, placement) in result.placements.iter().enumerate() {
@@ -2037,7 +2037,7 @@ mod tests {
         let config = Config::default().with_strategy(Strategy::BottomLeftFill);
         let nester = Nester2D::new(config);
 
-        let result = nester.solve(&[gear.clone()], &boundary).unwrap();
+        let result = nester.solve(std::slice::from_ref(&gear), &boundary).unwrap();
 
         println!("Placed {} pieces", result.placements.len());
 
@@ -2111,7 +2111,7 @@ mod tests {
 
         // Use solve_multi_strip like benchmark runner does
         let result = nester
-            .solve_multi_strip(&[gear.clone()], &boundary)
+            .solve_multi_strip(std::slice::from_ref(&gear), &boundary)
             .unwrap();
 
         println!(
@@ -2332,7 +2332,8 @@ mod tests {
         // Replicate EXACTLY how benchmark runner creates geometries:
         // Each piece is a separate Geometry2D with quantity=1
         // (vertices, demand, allowed_rotations_deg)
-        let shape_defs: Vec<(Vec<(f64, f64)>, usize, Vec<f64>)> = vec![
+        type ShapeDef = (Vec<(f64, f64)>, usize, Vec<f64>);
+        let shape_defs: Vec<ShapeDef> = vec![
             (
                 vec![
                     (0.0, 0.0),
@@ -2503,7 +2504,7 @@ mod tests {
                 .unwrap_or(0);
 
             // piece_37 to piece_49 are Gear shapes
-            if id_num >= 37 && id_num <= 49 {
+            if (37..=49).contains(&id_num) {
                 let origin_x = p.position[0];
                 let rotation = p.rotation.first().copied().unwrap_or(0.0);
                 let strip_idx = p.boundary_index;

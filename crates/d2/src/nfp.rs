@@ -1827,7 +1827,7 @@ mod tests {
         let triangles = triangulate_polygon(&l_shape);
 
         // Should triangulate into multiple triangles
-        assert!(triangles.len() >= 1);
+        assert!(!triangles.is_empty());
     }
 
     #[test]
@@ -1861,7 +1861,7 @@ mod tests {
         // Should handle without crashing
         let result = is_polygon_convex(&near_collinear);
         // The result depends on numerical precision, but it shouldn't panic
-        assert!(result == true || result == false);
+        let _ = result; // Just verify it doesn't panic
     }
 
     #[test]

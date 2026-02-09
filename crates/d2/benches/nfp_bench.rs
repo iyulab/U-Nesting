@@ -16,7 +16,7 @@ fn bench_nester_blf(c: &mut Criterion) {
             .map(|i| {
                 let w = 20.0 + (i as f64 * 3.0) % 30.0;
                 let h = 15.0 + (i as f64 * 7.0) % 25.0;
-                Geometry2D::rectangle(&format!("R{}", i), w, h)
+                Geometry2D::rectangle(format!("R{}", i), w, h)
             })
             .collect();
         let boundary = Boundary2D::rectangle(200.0, 200.0);

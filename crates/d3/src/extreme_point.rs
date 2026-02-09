@@ -539,7 +539,7 @@ mod tests {
         let eps = ExtremePointSet::new(&boundary, 0.0, 0.0);
 
         assert_eq!(eps.len(), 1);
-        assert!(eps.is_empty() == false);
+        assert!(!eps.is_empty());
     }
 
     #[test]

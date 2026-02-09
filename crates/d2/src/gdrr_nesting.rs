@@ -753,7 +753,7 @@ mod tests {
         let mut problem = GdrrNestingProblem::new(geometries, boundary, config, cancelled, 60000);
         let solution = problem.create_initial_solution();
 
-        assert!(solution.placed.len() > 0);
+        assert!(!solution.placed.is_empty());
         assert!(solution.placed_area > 0.0);
     }
 

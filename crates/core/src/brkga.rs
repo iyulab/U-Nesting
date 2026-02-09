@@ -559,7 +559,7 @@ mod tests {
 
         assert_eq!(chromosome.len(), 10);
         for &key in &chromosome.keys {
-            assert!(key >= 0.0 && key < 1.0);
+            assert!((0.0..1.0).contains(&key));
         }
     }
 
@@ -573,7 +573,7 @@ mod tests {
 
         assert_eq!(child.len(), 10);
         for &key in &child.keys {
-            assert!(key >= 0.0 && key < 1.0);
+            assert!((0.0..1.0).contains(&key));
         }
     }
 
