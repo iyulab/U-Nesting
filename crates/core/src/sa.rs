@@ -260,7 +260,7 @@ impl<P: SaProblem> SaRunner<P> {
 
     /// Runs the Simulated Annealing algorithm.
     pub fn run(&self) -> SaResult<P::Solution> {
-        self.run_with_rng(&mut thread_rng())
+        self.run_with_rng(&mut rand::rng())
     }
 
     /// Runs the Simulated Annealing algorithm with a specific RNG.
@@ -327,7 +327,7 @@ impl<P: SaProblem> SaRunner<P> {
                 total_count += 1;
 
                 // Select random operator
-                let operator = operators[rng.gen_range(0..operators.len())];
+                let operator = operators[rng.random_range(0..operators.len())];
 
                 // Generate neighbor
                 let mut neighbor = self.problem.neighbor(&current, operator, rng);
@@ -344,7 +344,7 @@ impl<P: SaProblem> SaRunner<P> {
                 } else {
                     // Worse solution - accept with probability exp(delta/T)
                     let probability = (delta / temperature).exp();
-                    rng.gen::<f64>() < probability
+                    rng.random::<f64>() < probability
                 };
 
                 if accept {
@@ -459,7 +459,7 @@ impl<P: SaProblem> SaRunner<P> {
         let results: Vec<SaResult<P::Solution>> = (0..num_restarts)
             .into_par_iter()
             .map(|_| {
-                let mut rng = thread_rng();
+                let mut rng = rand::rng();
                 self.run_with_rng(&mut rng)
             })
             .collect();
@@ -507,7 +507,7 @@ impl PermutationSolution {
         sequence.shuffle(rng);
 
         let rotations: Vec<usize> = (0..size)
-            .map(|_| rng.gen_range(0..rotation_options.max(1)))
+            .map(|_| rng.random_range(0..rotation_options.max(1)))
             .collect();
 
         Self {
@@ -535,8 +535,8 @@ impl PermutationSolution {
             return result;
         }
 
-        let i = rng.gen_range(0..result.sequence.len());
-        let j = rng.gen_range(0..result.sequence.len());
+        let i = rng.random_range(0..result.sequence.len());
+        let j = rng.random_range(0..result.sequence.len());
         result.sequence.swap(i, j);
         result.objective = f64::NEG_INFINITY;
         result
@@ -549,8 +549,8 @@ impl PermutationSolution {
             return result;
         }
 
-        let from = rng.gen_range(0..result.sequence.len());
-        let to = rng.gen_range(0..result.sequence.len());
+        let from = rng.random_range(0..result.sequence.len());
+        let to = rng.random_range(0..result.sequence.len());
 
         if from != to {
             let elem = result.sequence.remove(from);
@@ -572,7 +572,7 @@ impl PermutationSolution {
             return result;
         }
 
-        let (mut p1, mut p2) = (rng.gen_range(0..n), rng.gen_range(0..n));
+        let (mut p1, mut p2) = (rng.random_range(0..n), rng.random_range(0..n));
         if p1 > p2 {
             std::mem::swap(&mut p1, &mut p2);
         }
@@ -589,8 +589,8 @@ impl PermutationSolution {
             return result;
         }
 
-        let idx = rng.gen_range(0..result.rotations.len());
-        result.rotations[idx] = rng.gen_range(0..result.rotation_options);
+        let idx = rng.random_range(0..result.rotations.len());
+        result.rotations[idx] = rng.random_range(0..result.rotation_options);
         result.objective = f64::NEG_INFINITY;
         result
     }
@@ -722,7 +722,7 @@ mod tests {
 
     #[test]
     fn test_neighborhood_operators() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let solution = PermutationSolution::random(10, 4, &mut rng);
 
         // Test all operators produce valid permutations

@@ -460,7 +460,7 @@ impl GdrrProblem for GdrrNestingProblem {
         }
 
         // Select a random seed item
-        let seed_idx = rng.gen_range(0..solution.placed.len());
+        let seed_idx = rng.random_range(0..solution.placed.len());
         let seed = &solution.placed[seed_idx];
         let seed_x = seed.x;
         let seed_y = seed.y;

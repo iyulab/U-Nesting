@@ -148,7 +148,7 @@ impl RandomKeyChromosome {
 
     /// Creates a random chromosome.
     pub fn random<R: Rng>(num_keys: usize, rng: &mut R) -> Self {
-        let keys: Vec<f64> = (0..num_keys).map(|_| rng.gen::<f64>()).collect();
+        let keys: Vec<f64> = (0..num_keys).map(|_| rng.random::<f64>()).collect();
         Self {
             keys,
             fitness: f64::NEG_INFINITY,
@@ -185,7 +185,7 @@ impl RandomKeyChromosome {
             .iter()
             .zip(&other.keys)
             .map(|(&elite_key, &non_elite_key)| {
-                if rng.gen::<f64>() < elite_bias {
+                if rng.random::<f64>() < elite_bias {
                     elite_key
                 } else {
                     non_elite_key
@@ -318,7 +318,7 @@ impl<P: BrkgaProblem> BrkgaRunner<P> {
 
     /// Runs the BRKGA algorithm.
     pub fn run(&self) -> BrkgaResult {
-        self.run_with_rng(&mut thread_rng())
+        self.run_with_rng(&mut rand::rng())
     }
 
     /// Runs the BRKGA algorithm with a progress callback.
@@ -326,7 +326,7 @@ impl<P: BrkgaProblem> BrkgaRunner<P> {
     where
         F: Fn(BrkgaProgress),
     {
-        self.run_with_rng_and_progress(&mut thread_rng(), Some(progress_callback))
+        self.run_with_rng_and_progress(&mut rand::rng(), Some(progress_callback))
     }
 
     /// Runs the BRKGA algorithm with a specific RNG.
@@ -413,11 +413,11 @@ impl<P: BrkgaProblem> BrkgaRunner<P> {
             let mut children: Vec<RandomKeyChromosome> = (0..crossover_count)
                 .map(|_| {
                     // Select one elite parent
-                    let elite_idx = rng.gen_range(0..elite_count);
+                    let elite_idx = rng.random_range(0..elite_count);
                     let elite_parent = &population[elite_idx];
 
                     // Select one non-elite parent
-                    let non_elite_idx = rng.gen_range(elite_count..population.len());
+                    let non_elite_idx = rng.random_range(elite_count..population.len());
                     let non_elite_parent = &population[non_elite_idx];
 
                     // Biased crossover
@@ -544,7 +544,7 @@ mod tests {
 
     #[test]
     fn test_random_key_chromosome() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let chromosome = RandomKeyChromosome::random(10, &mut rng);
 
         assert_eq!(chromosome.len(), 10);
@@ -555,7 +555,7 @@ mod tests {
 
     #[test]
     fn test_biased_crossover() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let elite = RandomKeyChromosome::random(10, &mut rng);
         let non_elite = RandomKeyChromosome::random(10, &mut rng);
 

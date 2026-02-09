@@ -54,7 +54,7 @@ impl PackingChromosome {
 
         let orientations: Vec<usize> = orientation_counts
             .iter()
-            .map(|&count| rng.gen_range(0..count.max(1)))
+            .map(|&count| rng.random_range(0..count.max(1)))
             .collect();
 
         Self {
@@ -85,7 +85,7 @@ impl PackingChromosome {
         }
 
         // Select two crossover points
-        let (mut p1, mut p2) = (rng.gen_range(0..n), rng.gen_range(0..n));
+        let (mut p1, mut p2) = (rng.random_range(0..n), rng.random_range(0..n));
         if p1 > p2 {
             std::mem::swap(&mut p1, &mut p2);
         }
@@ -121,7 +121,7 @@ impl PackingChromosome {
             .enumerate()
             .map(|(i, (a, b))| {
                 let max_orient = orientation_counts.get(i).copied().unwrap_or(1);
-                let chosen = if rng.gen() { *a } else { *b };
+                let chosen = if rng.random() { *a } else { *b };
                 chosen % max_orient.max(1)
             })
             .collect();
@@ -141,8 +141,8 @@ impl PackingChromosome {
             return;
         }
 
-        let i = rng.gen_range(0..self.order.len());
-        let j = rng.gen_range(0..self.order.len());
+        let i = rng.random_range(0..self.order.len());
+        let j = rng.random_range(0..self.order.len());
         self.order.swap(i, j);
         self.fitness = f64::NEG_INFINITY;
     }
@@ -153,10 +153,10 @@ impl PackingChromosome {
             return;
         }
 
-        let idx = rng.gen_range(0..self.orientations.len());
+        let idx = rng.random_range(0..self.orientations.len());
         let max_orient = orientation_counts.get(idx).copied().unwrap_or(1);
         if max_orient > 1 {
-            self.orientations[idx] = rng.gen_range(0..max_orient);
+            self.orientations[idx] = rng.random_range(0..max_orient);
             self.fitness = f64::NEG_INFINITY;
         }
     }
@@ -168,7 +168,7 @@ impl PackingChromosome {
             return;
         }
 
-        let (mut p1, mut p2) = (rng.gen_range(0..n), rng.gen_range(0..n));
+        let (mut p1, mut p2) = (rng.random_range(0..n), rng.random_range(0..n));
         if p1 > p2 {
             std::mem::swap(&mut p1, &mut p2);
         }
@@ -198,7 +198,7 @@ impl Individual for PackingChromosome {
 
     fn mutate<R: Rng>(&mut self, rng: &mut R) {
         // 50% swap, 30% inversion, 20% orientation
-        let r: f64 = rng.gen();
+        let r: f64 = rng.random();
         if r < 0.5 {
             self.swap_mutate(rng);
         } else if r < 0.8 {
@@ -384,7 +384,7 @@ mod tests {
 
     #[test]
     fn test_packing_chromosome_crossover() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let orientation_counts = vec![6, 6, 6, 6, 6];
         let parent1 = PackingChromosome::random_with_options(5, &orientation_counts, &mut rng);
         let parent2 = PackingChromosome::random_with_options(5, &orientation_counts, &mut rng);
@@ -405,7 +405,7 @@ mod tests {
 
     #[test]
     fn test_packing_chromosome_mutation() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let orientation_counts = vec![6, 6, 6, 6, 6];
         let mut chromosome =
             PackingChromosome::random_with_options(5, &orientation_counts, &mut rng);

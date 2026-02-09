@@ -461,8 +461,6 @@ mod tests {
 
     #[test]
     fn test_sa_problem_decode() {
-        use rand::prelude::*;
-
         let geometries = vec![Geometry2D::rectangle("R1", 20.0, 10.0).with_quantity(2)];
 
         let boundary = Boundary2D::rectangle(100.0, 50.0);
@@ -474,7 +472,7 @@ mod tests {
         assert_eq!(problem.num_instances(), 2);
 
         // Create a random solution and decode
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let solution = PermutationSolution::random(problem.num_instances(), 1, &mut rng);
         let (placements, utilization, placed_count) = problem.decode(&solution);
 

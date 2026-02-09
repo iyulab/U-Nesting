@@ -441,7 +441,7 @@ impl AlnsProblem for AlnsNestingProblem {
             }
             DestroyOperatorId::Related | DestroyOperatorId::Shaw => {
                 // Cluster removal (same logic for both)
-                let seed_idx = rng.gen_range(0..solution.placed.len());
+                let seed_idx = rng.random_range(0..solution.placed.len());
                 let seed = &solution.placed[seed_idx];
                 let seed_x = seed.x;
                 let seed_y = seed.y;
@@ -508,7 +508,7 @@ impl AlnsProblem for AlnsNestingProblem {
                 // Random order placement
                 let mut shuffled = items_to_place.clone();
                 use rand::SeedableRng;
-                let mut rng = rand::rngs::StdRng::from_entropy();
+                let mut rng = rand::rngs::StdRng::from_os_rng();
                 shuffled.shuffle(&mut rng);
                 self.place_items_blf(&shuffled, solution);
             }

@@ -238,7 +238,7 @@ impl InstanceGenerator {
     pub fn generate(&self, class: InstanceClass, num_items: usize) -> Dataset3D {
         let mut rng: Box<dyn RngCore> = match self.seed {
             Some(seed) => Box::new(StdRng::seed_from_u64(seed)),
-            None => Box::new(thread_rng()),
+            None => Box::new(rand::rng()),
         };
 
         let items: Vec<Item3D> = (0..num_items)
@@ -262,65 +262,65 @@ impl InstanceGenerator {
         let (w, h, d) = match class {
             InstanceClass::MPV1 => {
                 // Small width, large height and depth
-                let w = rng.gen_range(1.0..=self.bin_dim / 2.0);
-                let h = rng.gen_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
-                let d = rng.gen_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
+                let w = rng.random_range(1.0..=self.bin_dim / 2.0);
+                let h = rng.random_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
+                let d = rng.random_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
                 (w, h, d)
             }
             InstanceClass::MPV2 => {
                 // Large width, small height, large depth
-                let w = rng.gen_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
-                let h = rng.gen_range(1.0..=self.bin_dim / 2.0);
-                let d = rng.gen_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
+                let w = rng.random_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
+                let h = rng.random_range(1.0..=self.bin_dim / 2.0);
+                let d = rng.random_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
                 (w, h, d)
             }
             InstanceClass::MPV3 => {
                 // Large width and height, small depth
-                let w = rng.gen_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
-                let h = rng.gen_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
-                let d = rng.gen_range(1.0..=self.bin_dim / 2.0);
+                let w = rng.random_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
+                let h = rng.random_range(2.0 * self.bin_dim / 3.0..=self.bin_dim);
+                let d = rng.random_range(1.0..=self.bin_dim / 2.0);
                 (w, h, d)
             }
             InstanceClass::MPV4 => {
                 // Medium-sized items
-                let w = rng.gen_range(self.bin_dim / 2.0..=self.bin_dim);
-                let h = rng.gen_range(self.bin_dim / 2.0..=self.bin_dim);
-                let d = rng.gen_range(self.bin_dim / 2.0..=self.bin_dim);
+                let w = rng.random_range(self.bin_dim / 2.0..=self.bin_dim);
+                let h = rng.random_range(self.bin_dim / 2.0..=self.bin_dim);
+                let d = rng.random_range(self.bin_dim / 2.0..=self.bin_dim);
                 (w, h, d)
             }
             InstanceClass::MPV5 => {
                 // Small items
-                let w = rng.gen_range(1.0..=self.bin_dim / 2.0);
-                let h = rng.gen_range(1.0..=self.bin_dim / 2.0);
-                let d = rng.gen_range(1.0..=self.bin_dim / 2.0);
+                let w = rng.random_range(1.0..=self.bin_dim / 2.0);
+                let h = rng.random_range(1.0..=self.bin_dim / 2.0);
+                let d = rng.random_range(1.0..=self.bin_dim / 2.0);
                 (w, h, d)
             }
             InstanceClass::BW6 => {
                 // Berkey-Wang [1, 10]
-                let w = rng.gen_range(1.0..=10.0);
-                let h = rng.gen_range(1.0..=10.0);
-                let d = rng.gen_range(1.0..=10.0);
+                let w = rng.random_range(1.0..=10.0);
+                let h = rng.random_range(1.0..=10.0);
+                let d = rng.random_range(1.0..=10.0);
                 (w, h, d)
             }
             InstanceClass::BW7 => {
                 // Berkey-Wang [1, 35]
-                let w = rng.gen_range(1.0..=35.0);
-                let h = rng.gen_range(1.0..=35.0);
-                let d = rng.gen_range(1.0..=35.0);
+                let w = rng.random_range(1.0..=35.0);
+                let h = rng.random_range(1.0..=35.0);
+                let d = rng.random_range(1.0..=35.0);
                 (w, h, d)
             }
             InstanceClass::BW8 => {
                 // Berkey-Wang [1, 100]
-                let w = rng.gen_range(1.0..=100.0);
-                let h = rng.gen_range(1.0..=100.0);
-                let d = rng.gen_range(1.0..=100.0);
+                let w = rng.random_range(1.0..=100.0);
+                let h = rng.random_range(1.0..=100.0);
+                let d = rng.random_range(1.0..=100.0);
                 (w, h, d)
             }
             InstanceClass::Custom => {
                 // Default to uniform [1, bin_dim]
-                let w = rng.gen_range(1.0..=self.bin_dim);
-                let h = rng.gen_range(1.0..=self.bin_dim);
-                let d = rng.gen_range(1.0..=self.bin_dim);
+                let w = rng.random_range(1.0..=self.bin_dim);
+                let h = rng.random_range(1.0..=self.bin_dim);
+                let d = rng.random_range(1.0..=self.bin_dim);
                 (w, h, d)
             }
         };

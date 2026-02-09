@@ -16,7 +16,7 @@ impl SyntheticGenerator {
     /// Creates a new generator with a random seed.
     pub fn new() -> Self {
         Self {
-            rng: StdRng::from_entropy(),
+            rng: StdRng::from_os_rng(),
         }
     }
 
@@ -33,9 +33,9 @@ impl SyntheticGenerator {
     pub fn convex_only(&mut self, count: usize, strip_height: f64) -> Dataset {
         let mut items = Vec::with_capacity(count);
         for id in 0..count {
-            let sides = self.rng.gen_range(3..=8);
-            let radius = self.rng.gen_range(5.0..20.0);
-            let demand = self.rng.gen_range(1..=5);
+            let sides = self.rng.random_range(3..=8);
+            let radius = self.rng.random_range(5.0..20.0);
+            let demand = self.rng.random_range(1..=5);
             let shape = self.regular_polygon(sides, radius);
 
             items.push(Item {
@@ -59,17 +59,17 @@ impl SyntheticGenerator {
     pub fn concave_complex(&mut self, count: usize, strip_height: f64) -> Dataset {
         let mut items = Vec::with_capacity(count);
         for id in 0..count {
-            let shape_type = self.rng.gen_range(0..4);
+            let shape_type = self.rng.random_range(0..4);
             let shape = match shape_type {
                 0 => {
-                    let points = self.rng.gen_range(5..=8);
+                    let points = self.rng.random_range(5..=8);
                     self.star_polygon(points)
                 }
                 1 => self.l_shape(),
                 2 => self.t_shape(),
                 _ => self.cross_shape(),
             };
-            let demand = self.rng.gen_range(1..=3);
+            let demand = self.rng.random_range(1..=3);
 
             items.push(Item {
                 id,
@@ -92,11 +92,11 @@ impl SyntheticGenerator {
     pub fn with_holes(&mut self, count: usize, strip_height: f64) -> Dataset {
         let mut items = Vec::with_capacity(count);
         for id in 0..count {
-            let outer_radius = self.rng.gen_range(15.0..30.0);
-            let hole_radius = self.rng.gen_range(3.0..outer_radius * 0.4);
-            let outer_sides = self.rng.gen_range(4..=8);
-            let hole_sides = self.rng.gen_range(3..=6);
-            let demand = self.rng.gen_range(1..=3);
+            let outer_radius = self.rng.random_range(15.0..30.0);
+            let hole_radius = self.rng.random_range(3.0..outer_radius * 0.4);
+            let outer_sides = self.rng.random_range(4..=8);
+            let hole_sides = self.rng.random_range(3..=6);
+            let demand = self.rng.random_range(1..=3);
 
             let outer = self.regular_polygon(outer_sides, outer_radius);
             let hole = self.regular_polygon(hole_sides, hole_radius);
@@ -127,19 +127,19 @@ impl SyntheticGenerator {
     pub fn extreme_aspect(&mut self, count: usize, strip_height: f64) -> Dataset {
         let mut items = Vec::with_capacity(count);
         for id in 0..count {
-            let is_tall = self.rng.gen_bool(0.5);
+            let is_tall = self.rng.random_bool(0.5);
             let shape = if is_tall {
                 // Very tall and thin
-                let width = self.rng.gen_range(2.0..5.0);
-                let height = self.rng.gen_range(40.0..80.0);
+                let width = self.rng.random_range(2.0..5.0);
+                let height = self.rng.random_range(40.0..80.0);
                 self.rectangle(width, height)
             } else {
                 // Very wide and short
-                let width = self.rng.gen_range(40.0..80.0);
-                let height = self.rng.gen_range(2.0..5.0);
+                let width = self.rng.random_range(40.0..80.0);
+                let height = self.rng.random_range(2.0..5.0);
                 self.rectangle(width, height)
             };
-            let demand = self.rng.gen_range(1..=3);
+            let demand = self.rng.random_range(1..=3);
 
             items.push(Item {
                 id,
@@ -162,9 +162,9 @@ impl SyntheticGenerator {
     pub fn tiny_items(&mut self, count: usize, strip_height: f64) -> Dataset {
         let mut items = Vec::with_capacity(count);
         for id in 0..count {
-            let size = self.rng.gen_range(0.1..2.0);
-            let sides = self.rng.gen_range(3..=6);
-            let demand = self.rng.gen_range(5..=20);
+            let size = self.rng.random_range(0.1..2.0);
+            let sides = self.rng.random_range(3..=6);
+            let demand = self.rng.random_range(5..=20);
             let shape = self.regular_polygon(sides, size);
 
             items.push(Item {
@@ -188,16 +188,16 @@ impl SyntheticGenerator {
     pub fn large_count(&mut self, count: usize, strip_height: f64) -> Dataset {
         let mut items = Vec::with_capacity(count);
         for id in 0..count {
-            let shape_type = self.rng.gen_range(0..3);
+            let shape_type = self.rng.random_range(0..3);
             let shape = match shape_type {
                 0 => {
-                    let sides = self.rng.gen_range(3..=6);
-                    let radius = self.rng.gen_range(5.0..15.0);
+                    let sides = self.rng.random_range(3..=6);
+                    let radius = self.rng.random_range(5.0..15.0);
                     self.regular_polygon(sides, radius)
                 }
                 1 => {
-                    let w = self.rng.gen_range(5.0..20.0);
-                    let h = self.rng.gen_range(5.0..20.0);
+                    let w = self.rng.random_range(5.0..20.0);
+                    let h = self.rng.random_range(5.0..20.0);
                     self.rectangle(w, h)
                 }
                 _ => self.l_shape(),
@@ -225,10 +225,10 @@ impl SyntheticGenerator {
         let mut items = Vec::with_capacity(count);
         for id in 0..count {
             // Create a rectangle with small perturbations to edges
-            let w = self.rng.gen_range(10.0..20.0);
-            let h = self.rng.gen_range(10.0..20.0);
+            let w = self.rng.random_range(10.0..20.0);
+            let h = self.rng.random_range(10.0..20.0);
             let epsilon = 1e-6;
-            let demand = self.rng.gen_range(1..=3);
+            let demand = self.rng.random_range(1..=3);
 
             let shape = vec![
                 [0.0, 0.0],
@@ -265,8 +265,8 @@ impl SyntheticGenerator {
     pub fn self_touching(&mut self, count: usize, strip_height: f64) -> Dataset {
         let mut items = Vec::with_capacity(count);
         for id in 0..count {
-            let size = self.rng.gen_range(10.0..20.0);
-            let demand = self.rng.gen_range(1..=2);
+            let size = self.rng.random_range(10.0..20.0);
+            let demand = self.rng.random_range(1..=2);
             // Figure-8 like shape that touches itself at a point
             let shape = self.figure_eight(size);
 
@@ -348,8 +348,8 @@ impl SyntheticGenerator {
     }
 
     fn star_polygon(&mut self, points: usize) -> Vec<[f64; 2]> {
-        let outer_radius = self.rng.gen_range(15.0..25.0);
-        let inner_radius = outer_radius * self.rng.gen_range(0.3..0.5);
+        let outer_radius = self.rng.random_range(15.0..25.0);
+        let inner_radius = outer_radius * self.rng.random_range(0.3..0.5);
 
         let mut vertices = Vec::with_capacity(points * 2 + 1);
         for i in 0..(points * 2) {
@@ -366,10 +366,10 @@ impl SyntheticGenerator {
     }
 
     fn l_shape(&mut self) -> Vec<[f64; 2]> {
-        let w = self.rng.gen_range(15.0..25.0);
-        let h = self.rng.gen_range(15.0..25.0);
-        let notch_w = w * self.rng.gen_range(0.4..0.6);
-        let notch_h = h * self.rng.gen_range(0.4..0.6);
+        let w = self.rng.random_range(15.0..25.0);
+        let h = self.rng.random_range(15.0..25.0);
+        let notch_w = w * self.rng.random_range(0.4..0.6);
+        let notch_h = h * self.rng.random_range(0.4..0.6);
 
         vec![
             [0.0, 0.0],
@@ -383,8 +383,8 @@ impl SyntheticGenerator {
     }
 
     fn t_shape(&mut self) -> Vec<[f64; 2]> {
-        let w = self.rng.gen_range(20.0..30.0);
-        let h = self.rng.gen_range(20.0..30.0);
+        let w = self.rng.random_range(20.0..30.0);
+        let h = self.rng.random_range(20.0..30.0);
         let stem_w = w * 0.3;
         let stem_h = h * 0.6;
         let left_offset = (w - stem_w) / 2.0;
@@ -403,7 +403,7 @@ impl SyntheticGenerator {
     }
 
     fn cross_shape(&mut self) -> Vec<[f64; 2]> {
-        let size = self.rng.gen_range(20.0..30.0);
+        let size = self.rng.random_range(20.0..30.0);
         let arm = size * 0.3;
         let center = (size - arm) / 2.0;
 

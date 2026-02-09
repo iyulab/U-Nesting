@@ -1,14 +1,20 @@
 //! Genetic Algorithm framework for optimization.
 //!
 //! This module provides the GA abstraction layer for u-nesting. It defines
-//! domain-specific traits ([`Individual`], [`GaProblem`]) and delegates
-//! the actual evolutionary loop to `u-metaheur`'s GA framework.
+//! domain-specific traits ([`Individual`], [`GaProblem`]) that support
+//! mutable evaluation — the key difference from u-metaheur's immutable pattern.
 //!
 //! # Architecture
 //!
-//! u-nesting's `Individual` trait places crossover/mutation operations on the
-//! individual itself, while u-metaheur's `GaProblem` places them on the problem.
-//! An internal bridge adapter translates between these two conventions.
+//! u-nesting uses a **mutable evaluation** pattern: `evaluate(&mut Individual)`
+//! sets both fitness and auxiliary state (e.g., `placed_count`, `total_count`).
+//! This differs from u-metaheur's `evaluate(&Individual) -> Fitness` pattern,
+//! which only returns a fitness value without modifying the individual.
+//!
+//! Because of this fundamental difference, u-nesting maintains its own
+//! evolutionary loop while sharing the rand/rayon ecosystem with u-metaheur.
+//! Crossover and mutation operators are defined on [`Individual`] (u-nesting
+//! convention), not on [`GaProblem`] (u-metaheur convention).
 
 use rand::prelude::*;
 use rayon::prelude::*;
@@ -130,11 +136,14 @@ pub trait Individual: Clone + Send + Sync {
 }
 
 /// Trait for problem-specific GA operations.
+///
+/// Uses mutable evaluation: `evaluate(&mut Individual)` can set both
+/// fitness and auxiliary state on the individual.
 pub trait GaProblem: Send + Sync {
     /// The individual type for this problem.
     type Individual: Individual;
 
-    /// Evaluates the fitness of an individual.
+    /// Evaluates the fitness of an individual (mutable — can set auxiliary state).
     fn evaluate(&self, individual: &mut Self::Individual);
 
     /// Evaluates multiple individuals in parallel.
@@ -195,8 +204,8 @@ pub struct GaResult<I: Individual> {
 
 /// Genetic algorithm runner.
 ///
-/// Internally delegates to `u-metaheur`'s GA framework via a bridge adapter,
-/// while maintaining the u-nesting `Individual` trait convention.
+/// Runs the evolutionary loop with mutable evaluation, tournament selection,
+/// elitism, and configurable stopping conditions.
 pub struct GaRunner<P: GaProblem> {
     config: GaConfig,
     problem: P,
@@ -223,7 +232,7 @@ where
 
     /// Runs the genetic algorithm.
     pub fn run(&self) -> GaResult<P::Individual> {
-        self.run_with_rng(&mut thread_rng())
+        self.run_with_rng(&mut rand::rng())
     }
 
     /// Runs the genetic algorithm with a progress callback.
@@ -231,7 +240,7 @@ where
     where
         F: Fn(GaProgress<<P::Individual as Individual>::Fitness>),
     {
-        self.run_with_rng_and_progress(&mut thread_rng(), Some(progress_callback))
+        self.run_with_rng_and_progress(&mut rand::rng(), Some(progress_callback))
     }
 
     /// Runs the genetic algorithm with a specific RNG.
@@ -242,9 +251,6 @@ where
     }
 
     /// Runs the genetic algorithm with a specific RNG and optional progress callback.
-    ///
-    /// The evolutionary loop uses u-metaheur's tournament selection and generational
-    /// replacement model while respecting u-nesting's Individual trait convention.
     pub fn run_with_rng_and_progress<R: Rng, F>(
         &self,
         rng: &mut R,
@@ -317,19 +323,19 @@ where
                 Vec::with_capacity(self.config.population_size - new_population.len());
 
             while children.len() < self.config.population_size - new_population.len() {
-                // Selection (tournament) — using u-metaheur's tournament selection concept
+                // Tournament selection
                 let parent1 = self.tournament_select(&population, rng);
                 let parent2 = self.tournament_select(&population, rng);
 
                 // Crossover (on Individual, u-nesting convention)
-                let mut child = if rng.gen::<f64>() < self.config.crossover_rate {
+                let mut child = if rng.random::<f64>() < self.config.crossover_rate {
                     parent1.crossover(parent2, rng)
                 } else {
                     parent1.clone()
                 };
 
                 // Mutation (on Individual, u-nesting convention)
-                if rng.gen::<f64>() < self.config.mutation_rate {
+                if rng.random::<f64>() < self.config.mutation_rate {
                     child.mutate(rng);
                 }
 
@@ -422,16 +428,16 @@ where
         }
     }
 
-    /// Tournament selection using u-metaheur's selection concept.
+    /// Tournament selection (maximization — higher fitness wins).
     fn tournament_select<'a, R: Rng>(
         &self,
         population: &'a [P::Individual],
         rng: &mut R,
     ) -> &'a P::Individual {
-        let mut best_idx = rng.gen_range(0..population.len());
+        let mut best_idx = rng.random_range(0..population.len());
 
         for _ in 1..self.config.tournament_size {
-            let idx = rng.gen_range(0..population.len());
+            let idx = rng.random_range(0..population.len());
             if population[idx].fitness() > population[best_idx].fitness() {
                 best_idx = idx;
             }
@@ -468,7 +474,7 @@ impl PermutationChromosome {
         genes.shuffle(rng);
 
         let rotations: Vec<usize> = (0..size)
-            .map(|_| rng.gen_range(0..rotation_options.max(1)))
+            .map(|_| rng.random_range(0..rotation_options.max(1)))
             .collect();
 
         Self {
@@ -501,7 +507,7 @@ impl PermutationChromosome {
         }
 
         // Select two crossover points
-        let (mut p1, mut p2) = (rng.gen_range(0..n), rng.gen_range(0..n));
+        let (mut p1, mut p2) = (rng.random_range(0..n), rng.random_range(0..n));
         if p1 > p2 {
             std::mem::swap(&mut p1, &mut p2);
         }
@@ -534,7 +540,7 @@ impl PermutationChromosome {
             .rotations
             .iter()
             .zip(&other.rotations)
-            .map(|(a, b)| if rng.gen() { *a } else { *b })
+            .map(|(a, b)| if rng.random() { *a } else { *b })
             .collect();
 
         Self {
@@ -550,8 +556,8 @@ impl PermutationChromosome {
             return;
         }
 
-        let i = rng.gen_range(0..self.genes.len());
-        let j = rng.gen_range(0..self.genes.len());
+        let i = rng.random_range(0..self.genes.len());
+        let j = rng.random_range(0..self.genes.len());
         self.genes.swap(i, j);
         self.fitness = f64::NEG_INFINITY;
     }
@@ -562,8 +568,8 @@ impl PermutationChromosome {
             return;
         }
 
-        let idx = rng.gen_range(0..self.rotations.len());
-        self.rotations[idx] = rng.gen_range(0..rotation_options);
+        let idx = rng.random_range(0..self.rotations.len());
+        self.rotations[idx] = rng.random_range(0..rotation_options);
         self.fitness = f64::NEG_INFINITY;
     }
 
@@ -574,7 +580,7 @@ impl PermutationChromosome {
             return;
         }
 
-        let (mut p1, mut p2) = (rng.gen_range(0..n), rng.gen_range(0..n));
+        let (mut p1, mut p2) = (rng.random_range(0..n), rng.random_range(0..n));
         if p1 > p2 {
             std::mem::swap(&mut p1, &mut p2);
         }
@@ -602,7 +608,7 @@ impl Individual for PermutationChromosome {
 
     fn mutate<R: Rng>(&mut self, rng: &mut R) {
         // 70% swap, 30% inversion
-        if rng.gen::<f64>() < 0.7 {
+        if rng.random::<f64>() < 0.7 {
             self.swap_mutate(rng);
         } else {
             self.inversion_mutate(rng);
@@ -629,18 +635,18 @@ mod tests {
 
         fn random<R: Rng>(rng: &mut R) -> Self {
             Self {
-                value: rng.gen_range(-100.0..100.0),
+                value: rng.random_range(-100.0..100.0),
             }
         }
 
         fn crossover<R: Rng>(&self, other: &Self, rng: &mut R) -> Self {
             Self {
-                value: if rng.gen() { self.value } else { other.value },
+                value: if rng.random() { self.value } else { other.value },
             }
         }
 
         fn mutate<R: Rng>(&mut self, rng: &mut R) {
-            self.value += rng.gen_range(-10.0..10.0);
+            self.value += rng.random_range(-10.0..10.0);
         }
     }
 
@@ -670,7 +676,7 @@ mod tests {
 
     #[test]
     fn test_permutation_crossover() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let parent1 = PermutationChromosome::random_with_options(10, 4, &mut rng);
         let parent2 = PermutationChromosome::random_with_options(10, 4, &mut rng);
 
@@ -685,7 +691,7 @@ mod tests {
 
     #[test]
     fn test_permutation_mutation() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let mut chromosome = PermutationChromosome::random_with_options(10, 4, &mut rng);
 
         chromosome.swap_mutate(&mut rng);

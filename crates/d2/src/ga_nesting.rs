@@ -56,7 +56,7 @@ impl NestingChromosome {
         order.shuffle(rng);
 
         let rotations: Vec<usize> = (0..num_instances)
-            .map(|_| rng.gen_range(0..rotation_options.max(1)))
+            .map(|_| rng.random_range(0..rotation_options.max(1)))
             .collect();
 
         Self {
@@ -82,7 +82,7 @@ impl NestingChromosome {
         }
 
         // Select two crossover points
-        let (mut p1, mut p2) = (rng.gen_range(0..n), rng.gen_range(0..n));
+        let (mut p1, mut p2) = (rng.random_range(0..n), rng.random_range(0..n));
         if p1 > p2 {
             std::mem::swap(&mut p1, &mut p2);
         }
@@ -115,7 +115,7 @@ impl NestingChromosome {
             .rotations
             .iter()
             .zip(&other.rotations)
-            .map(|(a, b)| if rng.gen() { *a } else { *b })
+            .map(|(a, b)| if rng.random() { *a } else { *b })
             .collect();
 
         Self {
@@ -133,8 +133,8 @@ impl NestingChromosome {
             return;
         }
 
-        let i = rng.gen_range(0..self.order.len());
-        let j = rng.gen_range(0..self.order.len());
+        let i = rng.random_range(0..self.order.len());
+        let j = rng.random_range(0..self.order.len());
         self.order.swap(i, j);
         self.fitness = f64::NEG_INFINITY;
     }
@@ -145,8 +145,8 @@ impl NestingChromosome {
             return;
         }
 
-        let idx = rng.gen_range(0..self.rotations.len());
-        self.rotations[idx] = rng.gen_range(0..rotation_options);
+        let idx = rng.random_range(0..self.rotations.len());
+        self.rotations[idx] = rng.random_range(0..rotation_options);
         self.fitness = f64::NEG_INFINITY;
     }
 
@@ -157,7 +157,7 @@ impl NestingChromosome {
             return;
         }
 
-        let (mut p1, mut p2) = (rng.gen_range(0..n), rng.gen_range(0..n));
+        let (mut p1, mut p2) = (rng.random_range(0..n), rng.random_range(0..n));
         if p1 > p2 {
             std::mem::swap(&mut p1, &mut p2);
         }
@@ -185,7 +185,7 @@ impl Individual for NestingChromosome {
 
     fn mutate<R: Rng>(&mut self, rng: &mut R) {
         // 50% swap, 30% inversion, 20% rotation
-        let r: f64 = rng.gen();
+        let r: f64 = rng.random();
         if r < 0.5 {
             self.swap_mutate(rng);
         } else if r < 0.8 {
@@ -621,7 +621,7 @@ mod tests {
 
     #[test]
     fn test_nesting_chromosome_crossover() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let parent1 = NestingChromosome::random_with_options(10, 4, &mut rng);
         let parent2 = NestingChromosome::random_with_options(10, 4, &mut rng);
 
@@ -636,7 +636,7 @@ mod tests {
 
     #[test]
     fn test_nesting_chromosome_mutation() {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let mut chromosome = NestingChromosome::random_with_options(10, 4, &mut rng);
 
         chromosome.swap_mutate(&mut rng);

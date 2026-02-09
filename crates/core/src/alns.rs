@@ -357,7 +357,7 @@ impl AlnsRunner {
         // Initialize RNG
         let mut rng = match self.config.seed {
             Some(seed) => rand::rngs::StdRng::seed_from_u64(seed),
-            None => rand::rngs::StdRng::from_entropy(),
+            None => rand::rngs::StdRng::from_os_rng(),
         };
 
         let start_time = Instant::now();
@@ -418,7 +418,7 @@ impl AlnsRunner {
             let mut candidate = problem.clone_solution(&current);
 
             // Apply destroy (remove 10-40% of items)
-            let degree = rng.gen_range(0.1..=0.4);
+            let degree = rng.random_range(0.1..=0.4);
             let destroy_result = problem.destroy(&mut candidate, destroy_op, degree, &mut rng);
 
             // Apply repair
@@ -441,7 +441,7 @@ impl AlnsRunner {
                 // SA acceptance criterion
                 let delta = candidate_fitness - current_fitness;
                 let accept_prob = (-delta / temperature).exp();
-                if rng.gen::<f64>() < accept_prob {
+                if rng.random::<f64>() < accept_prob {
                     (true, self.config.score_accepted)
                 } else {
                     (false, 0.0)
@@ -548,7 +548,7 @@ impl AlnsRunner {
             return 0;
         }
 
-        let mut roll = rng.gen::<f64>() * total_weight;
+        let mut roll = rng.random::<f64>() * total_weight;
         for (i, (_, stat)) in stats.iter().enumerate() {
             roll -= stat.weight;
             if roll <= 0.0 {

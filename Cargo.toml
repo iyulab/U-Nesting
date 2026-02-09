@@ -42,7 +42,7 @@ anyhow = "1.0"
 rayon = "1.10"
 
 # Random
-rand = "0.8"
+rand = "0.9"
 
 # FFI
 libc = "0.2"

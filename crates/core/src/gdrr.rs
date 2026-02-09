@@ -333,7 +333,7 @@ impl GdrrRunner {
         // Initialize RNG
         let mut rng = match self.config.seed {
             Some(seed) => rand::rngs::StdRng::seed_from_u64(seed),
-            None => rand::rngs::StdRng::from_entropy(),
+            None => rand::rngs::StdRng::from_os_rng(),
         };
 
         let start_time = Instant::now();
@@ -379,10 +379,10 @@ impl GdrrRunner {
             }
 
             // Select ruin ratio
-            let ruin_ratio = rng.gen_range(self.config.min_ruin_ratio..=self.config.max_ruin_ratio);
+            let ruin_ratio = rng.random_range(self.config.min_ruin_ratio..=self.config.max_ruin_ratio);
 
             // Select ruin operator using roulette wheel
-            let ruin_roll: f64 = rng.gen::<f64>() * total_ruin_weight;
+            let ruin_roll: f64 = rng.random::<f64>() * total_ruin_weight;
             let ruin_type = if ruin_roll < self.config.random_ruin_weight {
                 RuinType::Random
             } else if ruin_roll < self.config.random_ruin_weight + self.config.cluster_ruin_weight {
