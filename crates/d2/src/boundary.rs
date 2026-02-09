@@ -106,11 +106,8 @@ impl Boundary2D {
         if self.infinite_length {
             return f64::INFINITY;
         }
-        let mut total = geom_polygon::area(&self.exterior);
-        for hole in &self.holes {
-            total -= geom_polygon::area(hole);
-        }
-        total
+        let hole_refs: Vec<&[(f64, f64)]> = self.holes.iter().map(|h| h.as_slice()).collect();
+        geom_polygon::area_with_holes(&self.exterior, &hole_refs)
     }
 }
 

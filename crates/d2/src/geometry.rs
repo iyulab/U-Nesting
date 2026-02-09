@@ -185,11 +185,8 @@ impl Geometry2D {
 
     /// Calculates the area of the polygon (exterior minus holes).
     fn calculate_area(&self) -> f64 {
-        let mut total = geom_polygon::area(&self.exterior);
-        for hole in &self.holes {
-            total -= geom_polygon::area(hole);
-        }
-        total
+        let hole_refs: Vec<&[(f64, f64)]> = self.holes.iter().map(|h| h.as_slice()).collect();
+        geom_polygon::area_with_holes(&self.exterior, &hole_refs)
     }
 
     /// Calculates the perimeter of the polygon.
@@ -283,7 +280,8 @@ impl Geometry for Geometry2D {
     }
 
     fn centroid(&self) -> Vec<f64> {
-        if let Some((cx, cy)) = geom_polygon::centroid(&self.exterior) {
+        let hole_refs: Vec<&[(f64, f64)]> = self.holes.iter().map(|h| h.as_slice()).collect();
+        if let Some((cx, cy)) = geom_polygon::centroid_with_holes(&self.exterior, &hole_refs) {
             vec![cx, cy]
         } else {
             vec![0.0, 0.0]
