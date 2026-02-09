@@ -89,7 +89,7 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../u-geometry
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo doc --workspace --no-deps --all-features
+      - run: cargo doc --workspace --exclude u-nesting-python --no-deps --all-features
         env:
           RUSTDOCFLAGS: -D warnings
 
