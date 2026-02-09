@@ -17,6 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout path dependencies
+        shell: bash
         run: |
           mkdir -p ../../foundation ../../algorithms
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
@@ -32,6 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout path dependencies
+        shell: bash
         run: |
           mkdir -p ../../foundation ../../algorithms
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
@@ -48,6 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout path dependencies
+        shell: bash
         run: |
           mkdir -p ../../foundation ../../algorithms
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
@@ -69,6 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout path dependencies
+        shell: bash
         run: |
           mkdir -p ../../foundation ../../algorithms
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
@@ -87,6 +91,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout path dependencies
+        shell: bash
         run: |
           mkdir -p ../../foundation ../../algorithms
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
@@ -104,6 +109,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout path dependencies
+        shell: bash
         run: |
           mkdir -p ../../foundation ../../algorithms
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
@@ -119,6 +125,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout path dependencies
+        shell: bash
         run: |
           mkdir -p ../../foundation ../../algorithms
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
@@ -135,6 +142,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout path dependencies
+        shell: bash
         run: |
           mkdir -p ../../foundation ../../algorithms
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
