@@ -1,6 +1,6 @@
 //! 2D geometry types.
 
-use geo::{Area, Centroid, ConvexHull, Coord, LineString, Polygon as GeoPolygon};
+use u_nesting_core::geom::polygon as geom_polygon;
 use u_nesting_core::geometry::{Geometry, Geometry2DExt, GeometryId, RotationConstraint};
 use u_nesting_core::transform::AABB2D;
 use u_nesting_core::{Error, Result};
@@ -175,28 +175,28 @@ impl Geometry2D {
         self.allow_flip
     }
 
-    /// Converts to a geo crate Polygon.
-    pub fn to_geo_polygon(&self) -> GeoPolygon<f64> {
-        let exterior = LineString::from(
+    /// Converts to a geo crate Polygon (for interop with geo-based algorithms).
+    pub fn to_geo_polygon(&self) -> geo::Polygon<f64> {
+        let exterior = geo::LineString::from(
             self.exterior
                 .iter()
-                .map(|&(x, y)| Coord { x, y })
+                .map(|&(x, y)| geo::Coord { x, y })
                 .collect::<Vec<_>>(),
         );
 
-        let holes: Vec<LineString<f64>> = self
+        let holes: Vec<geo::LineString<f64>> = self
             .holes
             .iter()
             .map(|hole| {
-                LineString::from(
+                geo::LineString::from(
                     hole.iter()
-                        .map(|&(x, y)| Coord { x, y })
+                        .map(|&(x, y)| geo::Coord { x, y })
                         .collect::<Vec<_>>(),
                 )
             })
             .collect();
 
-        GeoPolygon::new(exterior, holes)
+        geo::Polygon::new(exterior, holes)
     }
 
     /// Clears all cached values.
@@ -207,27 +207,27 @@ impl Geometry2D {
         self.cached_is_convex = None;
     }
 
-    /// Calculates the area of the polygon.
+    /// Calculates the area of the polygon (exterior minus holes).
     fn calculate_area(&self) -> f64 {
-        self.to_geo_polygon().unsigned_area()
+        let mut total = geom_polygon::area(&self.exterior);
+        for hole in &self.holes {
+            total -= geom_polygon::area(hole);
+        }
+        total
     }
 
     /// Calculates the perimeter of the polygon.
     fn calculate_perimeter(&self) -> f64 {
-        use geo::{Euclidean, Length};
-        let poly = self.to_geo_polygon();
-        let mut perim = poly.exterior().length::<Euclidean>();
-        for hole in poly.interiors() {
-            perim += hole.length::<Euclidean>();
+        let mut perim = geom_polygon::perimeter(&self.exterior);
+        for hole in &self.holes {
+            perim += geom_polygon::perimeter(hole);
         }
         perim
     }
 
     /// Calculates the convex hull.
     fn calculate_convex_hull(&self) -> Vec<(f64, f64)> {
-        let poly = self.to_geo_polygon();
-        let hull = poly.convex_hull();
-        hull.exterior().points().map(|p| (p.x(), p.y())).collect()
+        geom_polygon::convex_hull(&self.exterior)
     }
 
     /// Checks if the polygon is convex.
@@ -307,8 +307,8 @@ impl Geometry for Geometry2D {
     }
 
     fn centroid(&self) -> Vec<f64> {
-        if let Some(c) = self.to_geo_polygon().centroid() {
-            vec![c.x(), c.y()]
+        if let Some((cx, cy)) = geom_polygon::centroid(&self.exterior) {
+            vec![cx, cy]
         } else {
             vec![0.0, 0.0]
         }

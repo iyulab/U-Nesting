@@ -15,7 +15,6 @@ u-nesting-core.workspace = true
 geo.workspace = true
 geo-types.workspace = true
 i_overlay.workspace = true
-parry2d.workspace = true
 rstar.workspace = true
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
