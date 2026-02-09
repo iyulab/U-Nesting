@@ -210,11 +210,11 @@ impl Packer3D {
 
                     let is_better = match &best_fit {
                         None => true,
-                        Some((_, _, _, _, _, _, bz, _, _)) => {
+                        Some((_, _, _, bg_height, bx, by, bz, _, _)) => {
                             let best_score = bz * 1000000.0
-                                + best_fit.as_ref().unwrap().5 * 1000.0
-                                + best_fit.as_ref().unwrap().4
-                                + best_fit.as_ref().unwrap().3 * 0.1;
+                                + by * 1000.0
+                                + bx
+                                + bg_height * 0.1;
                             score < best_score
                         }
                     };
@@ -540,11 +540,11 @@ impl Packer3D {
 
                     let is_better = match &best_fit {
                         None => true,
-                        Some((_, _, _, _, _, _, bz, _, _)) => {
+                        Some((_, _, _, bg_height, bx, by, bz, _, _)) => {
                             let best_score = bz * 1000000.0
-                                + best_fit.as_ref().unwrap().5 * 1000.0
-                                + best_fit.as_ref().unwrap().4
-                                + best_fit.as_ref().unwrap().3 * 0.1;
+                                + by * 1000.0
+                                + bx
+                                + bg_height * 0.1;
                             score < best_score
                         }
                     };

@@ -518,8 +518,7 @@ pub fn check_translation_collision(
             {
                 if dist > tolerance
                     && dist < trans_len - tolerance
-                    && (first_collision.is_none()
-                        || dist < first_collision.as_ref().unwrap().distance)
+                    && first_collision.as_ref().is_none_or(|c| dist < c.distance)
                 {
                     first_collision = Some(CollisionEvent {
                         distance: dist,
@@ -545,8 +544,7 @@ pub fn check_translation_collision(
             {
                 if dist > tolerance
                     && dist < trans_len - tolerance
-                    && (first_collision.is_none()
-                        || dist < first_collision.as_ref().unwrap().distance)
+                    && first_collision.as_ref().is_none_or(|c| dist < c.distance)
                 {
                     first_collision = Some(CollisionEvent {
                         distance: dist,
@@ -881,8 +879,8 @@ fn find_start_position(stationary: &[(f64, f64)], orbiting: &[(f64, f64)]) -> Re
         .enumerate()
         .min_by(|(_, a), (_, b)| {
             a.1.partial_cmp(&b.1)
-                .unwrap()
-                .then(a.0.partial_cmp(&b.0).unwrap())
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then(a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal))
         })
         .map(|(i, _)| i)
         .unwrap_or(0);
@@ -894,8 +892,8 @@ fn find_start_position(stationary: &[(f64, f64)], orbiting: &[(f64, f64)]) -> Re
         .enumerate()
         .max_by(|(_, a), (_, b)| {
             a.1.partial_cmp(&b.1)
-                .unwrap()
-                .then(b.0.partial_cmp(&a.0).unwrap())
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then(b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal))
         })
         .map(|(i, _)| i)
         .unwrap_or(0);
