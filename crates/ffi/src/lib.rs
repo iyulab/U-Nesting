@@ -19,6 +19,9 @@
 //! - [`unesting_solve_2d_with_progress`] - 2D nesting with progress callback
 //! - [`unesting_solve_3d_with_progress`] - 3D packing with progress callback
 //!
+//! ### Cutting Path API
+//! - [`unesting_optimize_cutting_path`] - Optimizes cutting path for 2D solve results
+//!
 //! ## Error Codes
 //!
 //! | Code | Constant | Meaning |

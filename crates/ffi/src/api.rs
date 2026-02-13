@@ -862,6 +862,214 @@ fn solve_3d_with_callback(json_str: &str, callback: &CallbackWrapper) -> SolveRe
     }
 }
 
+/// Optimizes the cutting path for a 2D nesting solve result.
+///
+/// Takes a JSON request containing geometries, a solve result (placements),
+/// and an optional cutting configuration. Returns the optimized cutting path
+/// as JSON.
+///
+/// # Safety
+/// - `request_json` must be a valid null-terminated UTF-8 string
+/// - `result_ptr` must be a valid pointer to a `*mut c_char`
+/// - The caller must free the result string using `unesting_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn unesting_optimize_cutting_path(
+    request_json: *const c_char,
+    result_ptr: *mut *mut c_char,
+) -> i32 {
+    if request_json.is_null() || result_ptr.is_null() {
+        return UNESTING_ERR_NULL_PTR;
+    }
+
+    let json_str = match CStr::from_ptr(request_json).to_str() {
+        Ok(s) => s,
+        Err(_) => return UNESTING_ERR_INVALID_JSON,
+    };
+
+    let response = optimize_cutting_path_internal(json_str);
+    let response_json = match serde_json::to_string(&response) {
+        Ok(s) => s,
+        Err(_) => return UNESTING_ERR_UNKNOWN,
+    };
+
+    match CString::new(response_json) {
+        Ok(cstr) => {
+            *result_ptr = cstr.into_raw();
+            if response.success {
+                UNESTING_OK
+            } else {
+                UNESTING_ERR_SOLVE_FAILED
+            }
+        }
+        Err(_) => UNESTING_ERR_UNKNOWN,
+    }
+}
+
+fn optimize_cutting_path_internal(json_str: &str) -> CuttingResponse {
+    let request: CuttingRequest = match serde_json::from_str(json_str) {
+        Ok(r) => r,
+        Err(e) => {
+            return CuttingResponse {
+                version: API_VERSION.to_string(),
+                success: false,
+                error: Some(format!("Invalid JSON: {}", e)),
+                sequence: Vec::new(),
+                total_cut_distance: 0.0,
+                total_rapid_distance: 0.0,
+                total_pierces: 0,
+                estimated_time_seconds: None,
+                efficiency: 0.0,
+                computation_time_ms: 0,
+            };
+        }
+    };
+
+    // Validate the solve result
+    if !request.solve_result.success {
+        return CuttingResponse {
+            version: API_VERSION.to_string(),
+            success: false,
+            error: Some("Solve result indicates failure".to_string()),
+            sequence: Vec::new(),
+            total_cut_distance: 0.0,
+            total_rapid_distance: 0.0,
+            total_pierces: 0,
+            estimated_time_seconds: None,
+            efficiency: 0.0,
+            computation_time_ms: 0,
+        };
+    }
+
+    // Convert geometries
+    let geometries: Vec<Geometry2D> = request
+        .geometries
+        .iter()
+        .map(|g| {
+            let vertices: Vec<(f64, f64)> = g.polygon.iter().map(|p| (p[0], p[1])).collect();
+
+            let mut geom = Geometry2D::new(&g.id)
+                .with_polygon(vertices)
+                .with_quantity(g.quantity);
+
+            if let Some(ref holes) = g.holes {
+                for hole in holes {
+                    let hole_vertices: Vec<(f64, f64)> =
+                        hole.iter().map(|p| (p[0], p[1])).collect();
+                    geom = geom.with_hole(hole_vertices);
+                }
+            }
+
+            geom
+        })
+        .collect();
+
+    // Reconstruct SolveResult from the response
+    let mut solve_result = u_nesting_core::SolveResult::<f64>::new();
+    for p in &request.solve_result.placements {
+        solve_result.placements.push(u_nesting_core::Placement {
+            geometry_id: p.geometry_id.clone(),
+            instance: p.instance,
+            position: p.position.clone(),
+            rotation: p.rotation.clone(),
+            boundary_index: p.boundary_index,
+            mirrored: false,
+            rotation_index: None,
+        });
+    }
+    solve_result.boundaries_used = request.solve_result.boundaries_used;
+    solve_result.utilization = request.solve_result.utilization;
+
+    // Build cutting config
+    let cutting_config = build_cutting_config(request.cutting_config);
+
+    // Run cutting path optimization
+    let result =
+        u_nesting_cutting::optimize_cutting_path(&solve_result, &geometries, &cutting_config);
+
+    // Convert result to response
+    let sequence: Vec<CutStepResponse> = result
+        .sequence
+        .iter()
+        .map(|step| CutStepResponse {
+            contour_id: step.contour_id,
+            geometry_id: step.geometry_id.clone(),
+            instance: step.instance,
+            contour_type: match step.contour_type {
+                u_nesting_cutting::ContourType::Exterior => "exterior".to_string(),
+                u_nesting_cutting::ContourType::Interior => "interior".to_string(),
+            },
+            pierce_point: [step.pierce_point.0, step.pierce_point.1],
+            cut_direction: match step.cut_direction {
+                u_nesting_cutting::CutDirection::Ccw => "ccw".to_string(),
+                u_nesting_cutting::CutDirection::Cw => "cw".to_string(),
+            },
+            rapid_from: step.rapid_from.map(|p| [p.0, p.1]),
+            rapid_distance: step.rapid_distance,
+            cut_distance: step.cut_distance,
+        })
+        .collect();
+
+    CuttingResponse {
+        version: API_VERSION.to_string(),
+        success: true,
+        error: None,
+        sequence,
+        total_cut_distance: result.total_cut_distance,
+        total_rapid_distance: result.total_rapid_distance,
+        total_pierces: result.total_pierces,
+        estimated_time_seconds: result.estimated_time_seconds,
+        efficiency: result.efficiency(),
+        computation_time_ms: result.computation_time_ms,
+    }
+}
+
+fn build_cutting_config(request: Option<CuttingConfigRequest>) -> u_nesting_cutting::CuttingConfig {
+    let mut config = u_nesting_cutting::CuttingConfig::default();
+
+    if let Some(req) = request {
+        if let Some(kerf) = req.kerf_width {
+            config.kerf_width = kerf;
+        }
+        if let Some(weight) = req.pierce_weight {
+            config.pierce_weight = weight;
+        }
+        if let Some(iters) = req.max_2opt_iterations {
+            config.max_2opt_iterations = iters;
+        }
+        if let Some(speed) = req.rapid_speed {
+            config.rapid_speed = speed;
+        }
+        if let Some(speed) = req.cut_speed {
+            config.cut_speed = speed;
+        }
+        if let Some(ref dir) = req.exterior_direction {
+            config.exterior_direction = parse_direction(dir);
+        }
+        if let Some(ref dir) = req.interior_direction {
+            config.interior_direction = parse_direction(dir);
+        }
+        if let Some(home) = req.home_position {
+            config.home_position = (home[0], home[1]);
+        }
+        if let Some(candidates) = req.pierce_candidates {
+            config.pierce_candidates = candidates.max(1);
+        }
+        if let Some(tol) = req.tolerance {
+            config.tolerance = tol;
+        }
+    }
+
+    config
+}
+
+fn parse_direction(s: &str) -> u_nesting_cutting::config::CutDirectionPreference {
+    match s.to_lowercase().as_str() {
+        "ccw" => u_nesting_cutting::config::CutDirectionPreference::Ccw,
+        "cw" => u_nesting_cutting::config::CutDirectionPreference::Cw,
+        _ => u_nesting_cutting::config::CutDirectionPreference::Auto,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1383,5 +1591,184 @@ mod tests {
             assert_eq!(code, UNESTING_OK);
             unesting_free_string(result_ptr);
         }
+    }
+
+    // --- Cutting Path FFI Tests ---
+
+    #[test]
+    fn test_cutting_path_basic() {
+        // Step 1: Solve nesting
+        let nesting_json = r#"{
+            "geometries": [
+                {"id": "rect1", "polygon": [[0,0], [10,0], [10,5], [0,5]], "quantity": 2}
+            ],
+            "boundary": {"width": 50, "height": 50}
+        }"#;
+        let solve_response = solve_2d_internal(nesting_json);
+        assert!(solve_response.success);
+
+        // Step 2: Build cutting request
+        let cutting_request = CuttingRequest {
+            geometries: vec![Geometry2DRequest {
+                id: "rect1".to_string(),
+                polygon: vec![[0.0, 0.0], [10.0, 0.0], [10.0, 5.0], [0.0, 5.0]],
+                holes: None,
+                quantity: 2,
+                rotations: None,
+                allow_flip: false,
+            }],
+            solve_result: solve_response,
+            cutting_config: None,
+        };
+
+        let cutting_json = serde_json::to_string(&cutting_request).unwrap();
+        let response = optimize_cutting_path_internal(&cutting_json);
+
+        assert!(response.success, "Cutting should succeed: {:?}", response.error);
+        assert_eq!(response.sequence.len(), 2, "Should have 2 cut steps");
+        assert_eq!(response.total_pierces, 2);
+        assert!(response.total_cut_distance > 0.0);
+        assert!(response.efficiency > 0.0);
+    }
+
+    #[test]
+    fn test_cutting_path_ffi() {
+        // Step 1: Solve nesting
+        let solve_response = solve_2d_internal(r#"{
+            "geometries": [
+                {"id": "rect1", "polygon": [[0,0], [10,0], [10,5], [0,5]], "quantity": 1}
+            ],
+            "boundary": {"width": 50, "height": 50}
+        }"#);
+
+        let cutting_request = CuttingRequest {
+            geometries: vec![Geometry2DRequest {
+                id: "rect1".to_string(),
+                polygon: vec![[0.0, 0.0], [10.0, 0.0], [10.0, 5.0], [0.0, 5.0]],
+                holes: None,
+                quantity: 1,
+                rotations: None,
+                allow_flip: false,
+            }],
+            solve_result: solve_response,
+            cutting_config: Some(CuttingConfigRequest {
+                kerf_width: Some(0.2),
+                home_position: Some([0.0, 0.0]),
+                ..Default::default()
+            }),
+        };
+
+        let request_json = serde_json::to_string(&cutting_request).unwrap();
+        let request_cstr = CString::new(request_json).unwrap();
+        let mut result_ptr: *mut c_char = std::ptr::null_mut();
+
+        unsafe {
+            let code = unesting_optimize_cutting_path(request_cstr.as_ptr(), &mut result_ptr);
+            assert_eq!(code, UNESTING_OK);
+            assert!(!result_ptr.is_null());
+
+            let result_str = CStr::from_ptr(result_ptr).to_str().unwrap();
+            let response: CuttingResponse = serde_json::from_str(result_str).unwrap();
+
+            assert!(response.success);
+            assert_eq!(response.total_pierces, 1);
+            assert!(response.total_cut_distance > 0.0);
+
+            unesting_free_string(result_ptr);
+        }
+    }
+
+    #[test]
+    fn test_cutting_path_null_pointer() {
+        let mut result_ptr: *mut c_char = std::ptr::null_mut();
+
+        unsafe {
+            let code = unesting_optimize_cutting_path(std::ptr::null(), &mut result_ptr);
+            assert_eq!(code, UNESTING_ERR_NULL_PTR);
+        }
+    }
+
+    #[test]
+    fn test_cutting_path_invalid_json() {
+        let invalid = CString::new("not json").unwrap();
+        let mut result_ptr: *mut c_char = std::ptr::null_mut();
+
+        unsafe {
+            let code = unesting_optimize_cutting_path(invalid.as_ptr(), &mut result_ptr);
+            assert_eq!(code, UNESTING_ERR_SOLVE_FAILED);
+            assert!(!result_ptr.is_null());
+
+            let result_str = CStr::from_ptr(result_ptr).to_str().unwrap();
+            let response: CuttingResponse = serde_json::from_str(result_str).unwrap();
+            assert!(!response.success);
+            assert!(response.error.is_some());
+
+            unesting_free_string(result_ptr);
+        }
+    }
+
+    #[test]
+    fn test_cutting_path_with_holes() {
+        // Nesting request with holes
+        let solve_response = solve_2d_internal(r#"{
+            "geometries": [
+                {
+                    "id": "part_with_hole",
+                    "polygon": [[0,0], [20,0], [20,20], [0,20]],
+                    "holes": [[[5,5], [15,5], [15,15], [5,15]]],
+                    "quantity": 1
+                }
+            ],
+            "boundary": {"width": 50, "height": 50}
+        }"#);
+
+        let cutting_request = CuttingRequest {
+            geometries: vec![Geometry2DRequest {
+                id: "part_with_hole".to_string(),
+                polygon: vec![[0.0, 0.0], [20.0, 0.0], [20.0, 20.0], [0.0, 20.0]],
+                holes: Some(vec![vec![[5.0, 5.0], [15.0, 5.0], [15.0, 15.0], [5.0, 15.0]]]),
+                quantity: 1,
+                rotations: None,
+                allow_flip: false,
+            }],
+            solve_result: solve_response,
+            cutting_config: None,
+        };
+
+        let json = serde_json::to_string(&cutting_request).unwrap();
+        let response = optimize_cutting_path_internal(&json);
+
+        assert!(response.success);
+        // Should have 2 steps: interior hole first, then exterior
+        assert_eq!(response.sequence.len(), 2);
+
+        // Verify interior comes before exterior (precedence constraint)
+        assert_eq!(response.sequence[0].contour_type, "interior");
+        assert_eq!(response.sequence[1].contour_type, "exterior");
+    }
+
+    #[test]
+    fn test_cutting_config_parsing() {
+        let config = build_cutting_config(Some(CuttingConfigRequest {
+            kerf_width: Some(0.5),
+            pierce_weight: Some(20.0),
+            max_2opt_iterations: Some(500),
+            rapid_speed: Some(2000.0),
+            cut_speed: Some(50.0),
+            exterior_direction: Some("ccw".to_string()),
+            interior_direction: Some("cw".to_string()),
+            home_position: Some([10.0, 10.0]),
+            pierce_candidates: Some(4),
+            tolerance: Some(0.001),
+        }));
+
+        assert_eq!(config.kerf_width, 0.5);
+        assert_eq!(config.pierce_weight, 20.0);
+        assert_eq!(config.max_2opt_iterations, 500);
+        assert_eq!(config.rapid_speed, 2000.0);
+        assert_eq!(config.cut_speed, 50.0);
+        assert_eq!(config.home_position, (10.0, 10.0));
+        assert_eq!(config.pierce_candidates, 4);
+        assert_eq!(config.tolerance, 0.001);
     }
 }
