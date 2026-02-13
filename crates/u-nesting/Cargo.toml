@@ -14,9 +14,11 @@ categories = ["algorithms", "mathematics"]
 u-nesting-core = { workspace = true }
 u-nesting-d2 = { workspace = true, optional = true }
 u-nesting-d3 = { workspace = true, optional = true }
+u-nesting-cutting = { workspace = true, optional = true }
 
 [features]
 default = ["d2", "d3"]
 d2 = ["dep:u-nesting-d2"]
 d3 = ["dep:u-nesting-d3"]
-serde = ["u-nesting-core/serde", "u-nesting-d2?/serde", "u-nesting-d3?/serde"]
+cutting = ["dep:u-nesting-cutting"]
+serde = ["u-nesting-core/serde", "u-nesting-d2?/serde", "u-nesting-d3?/serde", "u-nesting-cutting?/serde"]

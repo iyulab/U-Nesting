@@ -1,0 +1,26 @@
+[package]
+name = "u-nesting-cutting"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+description = "Cutting path optimization for U-Nesting spatial optimization engine"
+keywords = ["cutting", "path-optimization", "laser", "nesting"]
+categories = ["algorithms", "mathematics"]
+
+[dependencies]
+u-nesting-core.workspace = true
+serde = { workspace = true, optional = true }
+thiserror.workspace = true
+rand.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+approx.workspace = true
+
+[features]
+default = []
+serde = ["dep:serde", "u-nesting-core/serde"]

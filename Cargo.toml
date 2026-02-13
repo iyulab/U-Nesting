@@ -4,6 +4,7 @@ members = [
     "crates/core",
     "crates/d2",
     "crates/d3",
+    "crates/cutting",
     "crates/ffi",
     "crates/u-nesting",
     "crates/benchmark",
@@ -62,6 +63,7 @@ pyo3 = { version = "0.24", features = ["extension-module"] }
 u-nesting-core = { version = "0.2.0", path = "crates/core" }
 u-nesting-d2 = { version = "0.2.0", path = "crates/d2" }
 u-nesting-d3 = { version = "0.2.0", path = "crates/d3" }
+u-nesting-cutting = { version = "0.2.0", path = "crates/cutting" }
 u-nesting-ffi = { version = "0.2.0", path = "crates/ffi" }
 u-nesting = { version = "0.2.0", path = "crates/u-nesting" }
 
