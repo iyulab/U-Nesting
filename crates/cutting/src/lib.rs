@@ -26,6 +26,7 @@ pub mod contour;
 pub mod cost;
 pub mod hierarchy;
 pub mod kerf;
+pub mod leadin;
 pub mod path;
 pub mod pierce;
 pub mod result;

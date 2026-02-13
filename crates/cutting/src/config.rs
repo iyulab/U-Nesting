@@ -3,6 +3,8 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::leadin::LeadInConfig;
+
 /// Configuration parameters for cutting path optimization.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -44,6 +46,9 @@ pub struct CuttingConfig {
 
     /// Tolerance for geometric comparisons.
     pub tolerance: f64,
+
+    /// Lead-in/lead-out configuration.
+    pub lead_in: LeadInConfig,
 }
 
 /// Preference for cutting direction.
@@ -71,6 +76,7 @@ impl Default for CuttingConfig {
             home_position: (0.0, 0.0),
             pierce_candidates: 1,
             tolerance: 1e-6,
+            lead_in: LeadInConfig::default(),
         }
     }
 }
@@ -108,6 +114,12 @@ impl CuttingConfig {
     /// Sets the number of pierce candidates per contour.
     pub fn with_pierce_candidates(mut self, candidates: usize) -> Self {
         self.pierce_candidates = candidates.max(1);
+        self
+    }
+
+    /// Sets the lead-in/lead-out configuration.
+    pub fn with_lead_in(mut self, lead_in: LeadInConfig) -> Self {
+        self.lead_in = lead_in;
         self
     }
 }
