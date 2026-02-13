@@ -25,6 +25,7 @@ pub mod common_edge;
 pub mod config;
 pub mod contour;
 pub mod cost;
+pub mod gtsp;
 pub mod hierarchy;
 pub mod kerf;
 pub mod leadin;
