@@ -21,10 +21,14 @@
 //!
 //! - Kim et al. (2019), "Laser cutting path optimization with minimum heat accumulation"
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::cost::point_distance_sq;
 
 /// Configuration for the thermal model.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ThermalConfig {
     /// Heat-affected zone radius in mm.
     /// Heat decays to 1/e at this distance from the cut.

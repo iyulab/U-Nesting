@@ -16,11 +16,15 @@
 //!
 //! - Hu et al. (2022), "A robust fast bridging algorithm for laser cutting"
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::contour::CutContour;
 use crate::cost::point_distance;
 
 /// Configuration for bridge/tab placement.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BridgeConfig {
     /// Width of each bridge (uncut segment length) in mm.
     pub bridge_width: f64,

@@ -18,12 +18,16 @@
 //!
 //! - Industry standard: lead-in length ~2x kerf width, 45-degree angle
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::contour::{ContourType, CutContour};
 use crate::pierce::PierceSelection;
 use crate::result::CutDirection;
 
 /// Configuration for lead-in/lead-out generation.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct LeadInConfig {
     /// Type of lead-in path.
     pub lead_in_type: LeadInType,
@@ -40,6 +44,7 @@ pub struct LeadInConfig {
 
 /// Type of lead-in/lead-out path.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum LeadInType {
     /// No lead-in (pierce directly at contour).
     None,

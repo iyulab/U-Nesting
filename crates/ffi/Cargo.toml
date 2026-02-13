@@ -18,6 +18,7 @@ crate-type = ["cdylib", "staticlib"]
 u-nesting-core = { workspace = true, features = ["serde"] }
 u-nesting-d2 = { workspace = true, features = ["serde"] }
 u-nesting-d3 = { workspace = true, features = ["serde"] }
+u-nesting-cutting = { workspace = true, features = ["serde"] }
 serde.workspace = true
 serde_json.workspace = true
 libc.workspace = true

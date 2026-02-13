@@ -241,3 +241,119 @@ impl<S: Into<f64> + Copy> From<u_nesting_core::SolveResult<S>> for SolveResponse
         }
     }
 }
+
+// --- Cutting Path Types ---
+
+/// Request for cutting path optimization.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CuttingRequest {
+    /// Original geometry definitions (same format as nesting request).
+    pub geometries: Vec<Geometry2DRequest>,
+
+    /// Solve result from a previous nesting operation.
+    pub solve_result: SolveResponse,
+
+    /// Cutting path configuration (optional; defaults will be used if absent).
+    #[serde(default)]
+    pub cutting_config: Option<CuttingConfigRequest>,
+}
+
+/// Cutting path configuration request.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CuttingConfigRequest {
+    /// Kerf width (cutting tool width). Set to 0.0 to disable kerf compensation.
+    pub kerf_width: Option<f64>,
+
+    /// Weight factor for pierce count in cost function.
+    pub pierce_weight: Option<f64>,
+
+    /// Maximum number of 2-opt improvement iterations.
+    pub max_2opt_iterations: Option<usize>,
+
+    /// Machine rapid traverse speed (units/s). For time estimation only.
+    pub rapid_speed: Option<f64>,
+
+    /// Machine cutting speed (units/s). For time estimation only.
+    pub cut_speed: Option<f64>,
+
+    /// Default cut direction for exterior contours: "ccw", "cw", or "auto".
+    pub exterior_direction: Option<String>,
+
+    /// Default cut direction for interior contours: "ccw", "cw", or "auto".
+    pub interior_direction: Option<String>,
+
+    /// Home position [x, y] for the cutting head.
+    pub home_position: Option<[f64; 2]>,
+
+    /// Number of candidate pierce points per contour.
+    pub pierce_candidates: Option<usize>,
+
+    /// Tolerance for geometric comparisons.
+    pub tolerance: Option<f64>,
+}
+
+/// Response for cutting path optimization.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CuttingResponse {
+    /// API version.
+    pub version: String,
+
+    /// Whether the operation succeeded.
+    pub success: bool,
+
+    /// Error message if failed.
+    pub error: Option<String>,
+
+    /// Ordered sequence of cutting steps.
+    #[serde(default)]
+    pub sequence: Vec<CutStepResponse>,
+
+    /// Total cutting distance.
+    pub total_cut_distance: f64,
+
+    /// Total non-cutting (rapid traverse) distance.
+    pub total_rapid_distance: f64,
+
+    /// Total number of pierce operations.
+    pub total_pierces: usize,
+
+    /// Estimated total time in seconds (if speeds configured).
+    pub estimated_time_seconds: Option<f64>,
+
+    /// Cutting efficiency (cut_distance / total_distance).
+    pub efficiency: f64,
+
+    /// Computation time in milliseconds.
+    pub computation_time_ms: u64,
+}
+
+/// A single step in the cutting sequence (FFI response).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CutStepResponse {
+    /// Contour ID.
+    pub contour_id: usize,
+
+    /// Source geometry ID.
+    pub geometry_id: String,
+
+    /// Instance index of the placed geometry.
+    pub instance: usize,
+
+    /// Contour type: "exterior" or "interior".
+    pub contour_type: String,
+
+    /// Piercing point [x, y].
+    pub pierce_point: [f64; 2],
+
+    /// Cutting direction: "ccw" or "cw".
+    pub cut_direction: String,
+
+    /// Starting point of rapid move [x, y] (null for first step).
+    pub rapid_from: Option<[f64; 2]>,
+
+    /// Rapid move distance.
+    pub rapid_distance: f64,
+
+    /// Cutting distance (contour perimeter).
+    pub cut_distance: f64,
+}
