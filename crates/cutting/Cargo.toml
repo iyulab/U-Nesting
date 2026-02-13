@@ -20,6 +20,7 @@ log.workspace = true
 [dev-dependencies]
 proptest.workspace = true
 approx.workspace = true
+u-nesting-d2.workspace = true
 
 [features]
 default = []
