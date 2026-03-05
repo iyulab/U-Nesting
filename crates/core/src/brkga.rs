@@ -25,6 +25,7 @@
 //! for combinatorial optimization. Journal of Heuristics, 17(5), 487-525.
 
 use rand::prelude::*;
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -245,11 +246,18 @@ pub trait BrkgaProblem: Send + Sync {
     fn evaluate(&self, chromosome: &mut RandomKeyChromosome);
 
     /// Evaluates multiple chromosomes in parallel.
-    /// Default implementation uses rayon for parallel evaluation.
+    /// Default implementation uses rayon when the `parallel` feature is enabled.
     fn evaluate_parallel(&self, chromosomes: &mut [RandomKeyChromosome]) {
-        chromosomes.par_iter_mut().for_each(|c| {
+        #[cfg(feature = "parallel")]
+        {
+            chromosomes.par_iter_mut().for_each(|c| {
+                self.evaluate(c);
+            });
+            return;
+        }
+        for c in chromosomes.iter_mut() {
             self.evaluate(c);
-        });
+        }
     }
 
     /// Called after each generation (for progress reporting).

@@ -13,7 +13,7 @@ categories = ["algorithms", "mathematics"]
 [dependencies]
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
-rayon.workspace = true
+rayon = { workspace = true, optional = true }
 rand.workspace = true
 log.workspace = true
 u-metaheur = { version = "0.1", path = "../../../../algorithms/u-metaheur" }
@@ -27,3 +27,9 @@ approx.workspace = true
 [features]
 default = []
 serde = ["dep:serde", "u-geometry/serde"]
+parallel = ["dep:rayon"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.3", features = ["wasm_js"] }
+# Activate js feature for getrandom 0.2 used by transitive deps (e.g. i_overlay ecosystem)
+getrandom_02 = { package = "getrandom", version = "0.2", features = ["js"] }

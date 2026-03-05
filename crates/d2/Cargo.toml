@@ -16,7 +16,7 @@ i_overlay.workspace = true
 rstar.workspace = true
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
-rayon.workspace = true
+rayon = { workspace = true, optional = true }
 rand.workspace = true
 log.workspace = true
 
@@ -32,6 +32,7 @@ criterion.workspace = true
 default = []
 serde = ["dep:serde", "u-nesting-core/serde"]
 milp = ["dep:good_lp"]
+parallel = ["dep:rayon", "u-nesting-core/parallel"]
 
 [[bench]]
 name = "nfp_bench"

@@ -17,6 +17,7 @@
 //! The rand 0.9 API is shared with u-metaheur for ecosystem compatibility.
 
 use rand::prelude::*;
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -465,6 +466,9 @@ impl<P: SaProblem> SaRunner<P> {
     ///
     /// # Returns
     /// The best result among all parallel runs
+    ///
+    /// Requires the `parallel` feature to be enabled.
+    #[cfg(feature = "parallel")]
     pub fn run_parallel(&self, num_restarts: usize) -> SaResult<P::Solution>
     where
         P: Clone,

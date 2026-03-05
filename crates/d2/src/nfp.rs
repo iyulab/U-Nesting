@@ -25,6 +25,7 @@ use crate::nfp_sliding::{compute_nfp_sliding, SlidingNfpConfig};
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::float::single::SingleFloatOverlay;
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::f64::consts::PI;
@@ -655,13 +656,26 @@ fn compute_nfp_general(stationary: &Geometry2D, rotated_orbiting: &[(f64, f64)])
         })
         .collect();
 
+    #[cfg(feature = "parallel")]
     let partial_nfps: Vec<Vec<(f64, f64)>> = pairs
         .par_iter()
         .flat_map(|(stat_tri, orb_tri)| {
-            // Reflect orbiting triangle
             let reflected: Vec<(f64, f64)> = orb_tri.iter().map(|&(x, y)| (-x, -y)).collect();
-
-            // Compute Minkowski sum of two convex polygons
+            if let Ok(nfp) = compute_minkowski_sum_convex(stat_tri, &reflected) {
+                nfp.polygons
+                    .into_iter()
+                    .filter(|polygon| polygon.len() >= 3)
+                    .collect::<Vec<_>>()
+            } else {
+                Vec::new()
+            }
+        })
+        .collect();
+    #[cfg(not(feature = "parallel"))]
+    let partial_nfps: Vec<Vec<(f64, f64)>> = pairs
+        .iter()
+        .flat_map(|(stat_tri, orb_tri)| {
+            let reflected: Vec<(f64, f64)> = orb_tri.iter().map(|&(x, y)| (-x, -y)).collect();
             if let Ok(nfp) = compute_minkowski_sum_convex(stat_tri, &reflected) {
                 nfp.polygons
                     .into_iter()

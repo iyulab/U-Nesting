@@ -17,6 +17,7 @@
 //! convention), not on [`GaProblem`] (u-metaheur convention).
 
 use rand::prelude::*;
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -147,11 +148,18 @@ pub trait GaProblem: Send + Sync {
     fn evaluate(&self, individual: &mut Self::Individual);
 
     /// Evaluates multiple individuals in parallel.
-    /// Default implementation uses rayon for parallel evaluation.
+    /// Default implementation uses rayon when the `parallel` feature is enabled.
     fn evaluate_parallel(&self, individuals: &mut [Self::Individual]) {
-        individuals.par_iter_mut().for_each(|ind| {
+        #[cfg(feature = "parallel")]
+        {
+            individuals.par_iter_mut().for_each(|ind| {
+                self.evaluate(ind);
+            });
+            return;
+        }
+        for ind in individuals.iter_mut() {
             self.evaluate(ind);
-        });
+        }
     }
 
     /// Creates an initial population.
