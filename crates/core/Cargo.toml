@@ -16,7 +16,7 @@ thiserror.workspace = true
 rayon = { workspace = true, optional = true }
 rand.workspace = true
 log.workspace = true
-u-metaheur = { version = "0.1", path = "../../../../algorithms/u-metaheur" }
+u-metaheur = { version = "0.2", path = "../../../../algorithms/u-metaheur" }
 u-numflow = { version = "0.2", path = "../../../../foundation/u-numflow" }
 u-geometry = { version = "0.1", path = "../../../../algorithms/u-geometry" }
 
