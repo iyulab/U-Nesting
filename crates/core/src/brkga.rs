@@ -255,6 +255,7 @@ pub trait BrkgaProblem: Send + Sync {
             });
             return;
         }
+        #[cfg(not(feature = "parallel"))]
         for c in chromosomes.iter_mut() {
             self.evaluate(c);
         }

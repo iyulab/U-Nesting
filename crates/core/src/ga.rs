@@ -157,6 +157,7 @@ pub trait GaProblem: Send + Sync {
             });
             return;
         }
+        #[cfg(not(feature = "parallel"))]
         for ind in individuals.iter_mut() {
             self.evaluate(ind);
         }
