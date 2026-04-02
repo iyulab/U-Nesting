@@ -1,6 +1,10 @@
 name: NuGet Release
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'bindings/csharp/UNesting/UNesting.csproj'
   workflow_dispatch:
     inputs:
       publish:
@@ -11,11 +15,52 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CSPROJ_PATH: bindings/csharp/UNesting/UNesting.csproj
+  PACKAGE_NAME: UNesting
 
 jobs:
+  # ── Check if version changed ──
+  check-version:
+    name: Check Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+      should_publish: ${{ steps.decide.outputs.should_publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Read version from csproj
+        id: read
+        run: |
+          VERSION=$(grep -oPm1 '(?<=<Version>)[^<]+' ${{ env.CSPROJ_PATH }})
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Current version: $VERSION"
+
+      - name: Decide whether to publish
+        id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            echo "Manual trigger — will publish"
+          else
+            OLD=$(git show HEAD~1:${{ env.CSPROJ_PATH }} 2>/dev/null | grep -oPm1 '(?<=<Version>)[^<]+' || echo "")
+            NEW=$(grep -oPm1 '(?<=<Version>)[^<]+' ${{ env.CSPROJ_PATH }})
+            if [ "$OLD" != "$NEW" ]; then
+              echo "should_publish=true" >> "$GITHUB_OUTPUT"
+              echo "Version changed: $OLD → $NEW"
+            else
+              echo "should_publish=false" >> "$GITHUB_OUTPUT"
+              echo "Version unchanged ($NEW) — skipping"
+            fi
+          fi
+
   # ── Build native libraries for each platform ──
   build-native:
-    name: Build Native (${{ matrix.target }})
+    name: Build Native (${{ matrix.rid }})
+    needs: check-version
+    if: needs.check-version.outputs.should_publish == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -67,24 +112,16 @@ jobs:
   # ── Pack & Publish NuGet ──
   pack-and-publish:
     name: Pack & Publish NuGet
-    needs: build-native
+    needs: [check-version, build-native]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Read version from csproj
-        id: read_version
-        run: |
-          VERSION=$(grep -oPm1 '(?<=<Version>)[^<]+' bindings/csharp/UNesting/UNesting.csproj)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Package version: $VERSION"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      # Download all native artifacts into runtimes/ structure
       - name: Download win-x64 artifact
         uses: actions/download-artifact@v4
         with:
@@ -118,15 +155,13 @@ jobs:
 
       - name: Pack NuGet
         run: |
-          dotnet pack bindings/csharp/UNesting/UNesting.csproj \
-            -c Release \
-            -o ./nupkg
+          dotnet pack ${{ env.CSPROJ_PATH }} -c Release -o ./nupkg
 
       - name: Inspect package
         run: |
-          VERSION=${{ steps.read_version.outputs.version }}
+          VERSION=${{ needs.check-version.outputs.version }}
           echo "=== Package contents ==="
-          unzip -l ./nupkg/UNesting.${VERSION}.nupkg | grep -E "runtimes|build|lib"
+          unzip -l ./nupkg/${{ env.PACKAGE_NAME }}.${VERSION}.nupkg | grep -E "runtimes|build|lib"
 
       - name: Upload NuGet package artifact
         uses: actions/upload-artifact@v4
@@ -135,10 +170,10 @@ jobs:
           path: ./nupkg/*.nupkg
 
       - name: Publish to NuGet.org
-        if: inputs.publish != false
+        if: github.event_name == 'push' || inputs.publish != false
         run: |
-          VERSION=${{ steps.read_version.outputs.version }}
-          dotnet nuget push ./nupkg/UNesting.${VERSION}.nupkg \
+          VERSION=${{ needs.check-version.outputs.version }}
+          dotnet nuget push ./nupkg/${{ env.PACKAGE_NAME }}.${VERSION}.nupkg \
             --api-key ${{ secrets.NUGET_API_KEY }} \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
