@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Bump `i_overlay` dependency from 1.9 to 8.1 (dependency freshness sweep,
+  Tier 3 breaking migration). Crate usage is confined to three stable
+  paths — `core::fill_rule::FillRule`, `core::overlay_rule::OverlayRule`,
+  and the `float::single::SingleFloatOverlay::overlay()` trait method on
+  `Vec<Vec<[f64; 2]>>`/`Vec<[f64; 2]>` — none of which changed shape
+  across the six major releases in between. No API changes required in
+  `u-nesting-d2`; full workspace check (`d2`/`d3`/`cutting`/`ffi`/`wasm`/
+  `benchmark`/`u-nesting`, excluding `python`) green, clippy 0 warnings,
+  and all `d2` tests unchanged in count and outcome: 197 lib (default) /
+  202 lib (`--features milp`) / 40 integration / 4 fuzz — including the
+  fuzz suite that uses `i_overlay`'s own boolean intersection as an
+  independent oracle for overlap correctness, which would be the first
+  place a solver-precision or contour-winding-order change (introduced
+  upstream at `i_overlay` 3.0.1) surfaced as a regression.
+
 ## [0.9.0] - 2026-08-23
 
 ### Removed
