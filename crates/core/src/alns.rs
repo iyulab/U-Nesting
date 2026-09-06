@@ -371,7 +371,7 @@ impl AlnsRunner {
         // Initialize RNG
         let mut rng = match self.config.seed {
             Some(seed) => rand::rngs::StdRng::seed_from_u64(seed),
-            None => rand::rngs::StdRng::from_os_rng(),
+            None => rand::make_rng::<rand::rngs::StdRng>(),
         };
 
         let start_time = Timer::now();

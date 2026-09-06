@@ -7,7 +7,7 @@ use rand::prelude::*;
 use std::f64::consts::PI;
 
 /// Generator for synthetic 2D benchmark datasets.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SyntheticGenerator {
     rng: StdRng,
 }
@@ -16,7 +16,7 @@ impl SyntheticGenerator {
     /// Creates a new generator with a random seed.
     pub fn new() -> Self {
         Self {
-            rng: StdRng::from_os_rng(),
+            rng: rand::make_rng::<StdRng>(),
         }
     }
 

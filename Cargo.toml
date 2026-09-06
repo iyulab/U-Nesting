@@ -22,7 +22,7 @@ description = "Domain-agnostic 2D/3D spatial optimization engine"
 # crates.io allows at most 5 keywords — keep this list inheritable.
 keywords = ["nesting", "bin-packing", "geometry", "2d", "3d"]
 categories = ["algorithms", "mathematics", "science"]
-rust-version = "1.82"
+rust-version = "1.89"
 
 [workspace.dependencies]
 # Geometry
@@ -41,7 +41,7 @@ anyhow = "1.0"
 rayon = "1.10"
 
 # Random
-rand = "0.9"
+rand = "0.10"
 
 # FFI
 libc = "0.2"

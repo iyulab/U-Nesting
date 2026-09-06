@@ -537,8 +537,7 @@ impl AlnsProblem for AlnsNestingProblem {
             RepairOperatorId::Random => {
                 // Random order placement
                 let mut shuffled = items_to_place.clone();
-                use rand::SeedableRng;
-                let mut rng = rand::rngs::StdRng::from_os_rng();
+                let mut rng = rand::make_rng::<rand::rngs::StdRng>();
                 shuffled.shuffle(&mut rng);
                 self.place_items_blf(&shuffled, solution);
             }

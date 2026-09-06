@@ -236,7 +236,7 @@ impl InstanceGenerator {
 
     /// Generates an instance of the specified class.
     pub fn generate(&self, class: InstanceClass, num_items: usize) -> Dataset3D {
-        let mut rng: Box<dyn RngCore> = match self.seed {
+        let mut rng: Box<dyn Rng> = match self.seed {
             Some(seed) => Box::new(StdRng::seed_from_u64(seed)),
             None => Box::new(rand::rng()),
         };
@@ -258,7 +258,7 @@ impl InstanceGenerator {
     }
 
     /// Generates a single item based on class constraints.
-    fn generate_item(&self, class: InstanceClass, id: usize, rng: &mut dyn RngCore) -> Item3D {
+    fn generate_item(&self, class: InstanceClass, id: usize, rng: &mut dyn Rng) -> Item3D {
         let (w, h, d) = match class {
             InstanceClass::MPV1 => {
                 // Small width, large height and depth

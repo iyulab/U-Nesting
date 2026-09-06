@@ -56,12 +56,13 @@ impl DatasetParser {
             instance.to_lowercase()
         );
 
-        let response = ureq::get(&url)
+        let mut response = ureq::get(&url)
             .call()
             .map_err(|e| ParseError::HttpError(e.to_string()))?;
 
         let json = response
-            .into_string()
+            .body_mut()
+            .read_to_string()
             .map_err(|e| ParseError::HttpError(e.to_string()))?;
 
         self.parse_json(&json)

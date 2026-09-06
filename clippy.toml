@@ -1,4 +1,4 @@
 # Clippy configuration
-msrv = "1.82"
+msrv = "1.89"
 cognitive-complexity-threshold = 30
 too-many-arguments-threshold = 10

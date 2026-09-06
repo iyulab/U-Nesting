@@ -42,6 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The minimum supported Rust version is now 1.89** (previously declared as
+  1.82), and `rand` has been updated from 0.9 to 0.10. The declared value is
+  now verified by building on that exact toolchain: 1.87 and below fail. The
+  random number sequences produced for a given seed are unchanged, so seeded
+  results are identical to the previous release.
+- **`getrandom` is now 0.4** on WebAssembly targets. It reaches the browser
+  entropy source through its `wasm_js` crate feature alone; the
+  `RUSTFLAGS --cfg getrandom_backend="wasm_js"` that 0.3 required is no longer
+  needed. A separate 0.2 dependency, kept only to configure a transitive
+  requirement that no longer exists, has been dropped.
 - The `i_overlay` bump below is now verified on the Python bindings as well:
   `u-nesting-python` compiles against 8.1 and, driven through a real
   interpreter, `solve_2d` (`nfp`, the strategy that exercises `i_overlay`) and
