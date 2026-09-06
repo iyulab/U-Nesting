@@ -37,90 +37,25 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use u_nesting_core::api_types::{
+    Boundary2DRequest, Boundary3DRequest, ConfigRequest, Geometry2DRequest, Geometry3DRequest,
+};
 use u_nesting_core::geometry::Boundary;
 use u_nesting_core::solver::{Config, Solver, Strategy};
 use u_nesting_d2::{Boundary2D, Geometry2D, Nester2D};
 use u_nesting_d3::{Boundary3D, Geometry3D, Packer3D};
 
-/// 2D Geometry input.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Geometry2DInput {
-    id: String,
-    polygon: Vec<[f64; 2]>,
-    #[serde(default)]
-    holes: Option<Vec<Vec<[f64; 2]>>>,
-    #[serde(default = "default_quantity")]
-    quantity: usize,
-    #[serde(default)]
-    rotations: Option<Vec<f64>>,
-    #[serde(default)]
-    allow_flip: bool,
-}
-
-/// 2D Boundary input.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Boundary2DInput {
-    width: Option<f64>,
-    height: Option<f64>,
-    polygon: Option<Vec<[f64; 2]>>,
-}
-
-/// 3D Geometry input.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Geometry3DInput {
-    id: String,
-    dimensions: [f64; 3],
-    #[serde(default = "default_quantity")]
-    quantity: usize,
-    #[serde(default)]
-    mass: Option<f64>,
-    #[serde(default)]
-    orientation: Option<String>,
-}
-
-/// 3D Boundary input.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Boundary3DInput {
-    dimensions: [f64; 3],
-    #[serde(default)]
-    max_mass: Option<f64>,
-    #[serde(default)]
-    gravity: bool,
-    #[serde(default)]
-    stability: bool,
-}
-
-/// Config input.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-struct ConfigInput {
-    #[serde(default)]
-    strategy: Option<String>,
-    #[serde(default)]
-    spacing: Option<f64>,
-    #[serde(default)]
-    margin: Option<f64>,
-    #[serde(default)]
-    time_limit_ms: Option<u64>,
-    #[serde(default)]
-    target_utilization: Option<f64>,
-    #[serde(default)]
-    population_size: Option<usize>,
-    #[serde(default)]
-    max_generations: Option<u32>,
-    #[serde(default)]
-    crossover_rate: Option<f64>,
-    #[serde(default)]
-    mutation_rate: Option<f64>,
-    /// Optional RNG seed for reproducible stochastic runs (GA, BRKGA, SA).
-    #[serde(default)]
-    seed: Option<u64>,
-    /// Distribute overflow across multiple sheets (2D only). When true, parts that
-    /// do not fit on one sheet spill onto additional sheets; `boundaries_used`
-    /// reports the sheet count and each placement's `boundary_index` selects its
-    /// sheet with sheet-local coordinates. Defaults to false (single-sheet solve).
-    #[serde(default)]
-    multi_sheet: Option<bool>,
-}
+// Inputs use the canonical request types from `u-nesting-core::api_types`, the
+// same contract the C and WebAssembly bindings deserialize. Sharing them means a
+// field added to the engine's input surface reaches every binding at once, and
+// that an unknown key (a misspelled `quantity`, say) is rejected here exactly as
+// it is elsewhere rather than silently falling back to a default.
+//
+// Outputs deliberately do **not** follow: the response types below are
+// dimension-agnostic (`position`/`rotation` are vectors, so one shape serves 2D
+// and 3D), whereas the canonical responses are split into flat 2D and 3D
+// variants with different key names. Unifying them would rename keys in a
+// published API, which is a decision for a release boundary, not a refactor.
 
 /// Placement output.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -193,17 +128,13 @@ impl SolveOutput {
     }
 }
 
-fn default_quantity() -> usize {
-    1
-}
-
 /// Builds a solver [`Config`] from Python input, validating each field.
 ///
 /// Returns `Err(message)` on invalid input (negative/non-finite spacing or
 /// margin, unknown strategy name) so the caller raises `ValueError` instead of
 /// silently applying a default. Strategy names are parsed by the canonical
 /// [`Strategy::parse`], the single source of truth shared across all bindings.
-fn build_config(input: Option<ConfigInput>) -> Result<Config, String> {
+fn build_config(input: Option<ConfigRequest>) -> Result<Config, String> {
     let mut config = Config::default();
 
     if let Some(c) = input {
@@ -289,7 +220,7 @@ fn solve_2d<'py>(
         .import("json")?
         .call_method1("dumps", (geometries,))?
         .extract()?;
-    let geom_inputs: Vec<Geometry2DInput> = serde_json::from_str(&geom_json)
+    let geom_inputs: Vec<Geometry2DRequest> = serde_json::from_str(&geom_json)
         .map_err(|e| PyValueError::new_err(format!("Invalid geometries: {}", e)))?;
 
     // Parse boundary
@@ -297,11 +228,11 @@ fn solve_2d<'py>(
         .import("json")?
         .call_method1("dumps", (boundary,))?
         .extract()?;
-    let boundary_input: Boundary2DInput = serde_json::from_str(&boundary_json)
+    let boundary_input: Boundary2DRequest = serde_json::from_str(&boundary_json)
         .map_err(|e| PyValueError::new_err(format!("Invalid boundary: {}", e)))?;
 
     // Parse config
-    let config_input: Option<ConfigInput> = if let Some(cfg) = config {
+    let config_input: Option<ConfigRequest> = if let Some(cfg) = config {
         let cfg_json: String = py
             .import("json")?
             .call_method1("dumps", (cfg,))?
@@ -457,7 +388,7 @@ fn solve_3d<'py>(
         .import("json")?
         .call_method1("dumps", (geometries,))?
         .extract()?;
-    let geom_inputs: Vec<Geometry3DInput> = serde_json::from_str(&geom_json)
+    let geom_inputs: Vec<Geometry3DRequest> = serde_json::from_str(&geom_json)
         .map_err(|e| PyValueError::new_err(format!("Invalid geometries: {}", e)))?;
 
     // Parse boundary
@@ -465,11 +396,11 @@ fn solve_3d<'py>(
         .import("json")?
         .call_method1("dumps", (boundary,))?
         .extract()?;
-    let boundary_input: Boundary3DInput = serde_json::from_str(&boundary_json)
+    let boundary_input: Boundary3DRequest = serde_json::from_str(&boundary_json)
         .map_err(|e| PyValueError::new_err(format!("Invalid boundary: {}", e)))?;
 
     // Parse config
-    let config_input: Option<ConfigInput> = if let Some(cfg) = config {
+    let config_input: Option<ConfigRequest> = if let Some(cfg) = config {
         let cfg_json: String = py
             .import("json")?
             .call_method1("dumps", (cfg,))?
@@ -577,9 +508,15 @@ fn version() -> &'static str {
 }
 
 /// List available strategies.
+///
+/// The union of the 2D and 3D strategy names this build accepts: `nfp`, `gdrr`
+/// and `alns` apply to 2D nesting, `ep` to 3D packing, and the rest to both.
+/// Exact (MILP) strategies are deliberately absent — the public path currently
+/// handles axis-aligned rectangles only, so advertising them would promise more
+/// than it delivers.
 #[pyfunction]
 fn available_strategies() -> Vec<&'static str> {
-    vec!["blf", "nfp", "ga", "brkga", "sa", "ep"]
+    vec!["blf", "nfp", "ga", "brkga", "sa", "ep", "gdrr", "alns"]
 }
 
 /// U-Nesting Python module.
@@ -590,4 +527,307 @@ fn u_nesting(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(version, m)?)?;
     m.add_function(wrap_pyfunction!(available_strategies, m)?)?;
     Ok(())
+}
+
+/// Tests for the interpreter-independent half of the binding: input
+/// deserialization, configuration building, and derived output accounting.
+///
+/// The `#[pyfunction]` entry points themselves need a live interpreter and are
+/// exercised end-to-end by the packaging pipeline instead; everything reachable
+/// without one is asserted here so a regression in the contract surfaces at
+/// `cargo test` rather than at a consumer's first call.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use u_nesting_core::placement::Placement;
+    use u_nesting_core::SolveResult;
+
+    fn config_input() -> ConfigRequest {
+        ConfigRequest::default()
+    }
+
+    // ---- build_config: strategy ----
+
+    #[test]
+    fn none_input_yields_engine_defaults() {
+        let config = build_config(None).expect("default config is always valid");
+        let expected = Config::default();
+        assert_eq!(config.strategy, expected.strategy);
+        assert_eq!(config.spacing, expected.spacing);
+        assert_eq!(config.margin, expected.margin);
+        assert_eq!(config.time_limit_ms, expected.time_limit_ms);
+        assert_eq!(config.seed, expected.seed);
+    }
+
+    #[test]
+    fn every_advertised_strategy_is_accepted() {
+        // `available_strategies()` is the list the binding publishes to Python
+        // callers; each entry must round-trip through the canonical parser, or
+        // the module advertises a name its own solver rejects.
+        for name in available_strategies() {
+            let input = ConfigRequest {
+                strategy: Some(name.to_string()),
+                ..config_input()
+            };
+            assert!(
+                build_config(Some(input)).is_ok(),
+                "advertised strategy '{name}' was rejected by build_config"
+            );
+        }
+    }
+
+    #[test]
+    fn advertised_strategies_cover_every_supported_solver() {
+        // Regression guard: `gdrr` and `alns` solve 2D problems in this build but
+        // were missing from the published list, so callers could not discover
+        // them. Locked as a golden set — extending the solvers means extending
+        // this list in the same change.
+        assert_eq!(
+            available_strategies(),
+            vec!["blf", "nfp", "ga", "brkga", "sa", "ep", "gdrr", "alns"]
+        );
+    }
+
+    #[test]
+    fn unknown_strategy_is_rejected_by_name() {
+        let input = ConfigRequest {
+            strategy: Some("teleport".to_string()),
+            ..config_input()
+        };
+        let err = build_config(Some(input)).expect_err("unknown strategy must not fall back");
+        assert!(
+            err.contains("teleport"),
+            "error should name the offending strategy, got: {err}"
+        );
+    }
+
+    #[test]
+    fn strategy_parsing_tolerates_case_and_padding() {
+        let input = ConfigRequest {
+            strategy: Some("  NFP ".to_string()),
+            ..config_input()
+        };
+        let config = build_config(Some(input)).expect("canonical parser trims and lowercases");
+        assert_eq!(config.strategy, Strategy::NfpGuided);
+    }
+
+    // ---- build_config: numeric validation ----
+
+    #[test]
+    fn spacing_rejects_negative_and_non_finite() {
+        for bad in [-1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let input = ConfigRequest {
+                spacing: Some(bad),
+                ..config_input()
+            };
+            assert!(
+                build_config(Some(input)).is_err(),
+                "spacing {bad} must be rejected rather than silently applied"
+            );
+        }
+    }
+
+    #[test]
+    fn margin_rejects_negative_and_non_finite() {
+        for bad in [-0.5, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let input = ConfigRequest {
+                margin: Some(bad),
+                ..config_input()
+            };
+            assert!(
+                build_config(Some(input)).is_err(),
+                "margin {bad} must be rejected rather than silently applied"
+            );
+        }
+    }
+
+    #[test]
+    fn zero_spacing_and_margin_are_valid() {
+        let input = ConfigRequest {
+            spacing: Some(0.0),
+            margin: Some(0.0),
+            ..config_input()
+        };
+        let config = build_config(Some(input)).expect("zero is the boundary value, not an error");
+        assert_eq!(config.spacing, 0.0);
+        assert_eq!(config.margin, 0.0);
+    }
+
+    #[test]
+    fn target_utilization_is_clamped_to_unit_range() {
+        let over = build_config(Some(ConfigRequest {
+            target_utilization: Some(1.5),
+            ..config_input()
+        }))
+        .expect("out-of-range targets clamp instead of erroring");
+        assert_eq!(over.target_utilization, Some(1.0));
+
+        let under = build_config(Some(ConfigRequest {
+            target_utilization: Some(-0.5),
+            ..config_input()
+        }))
+        .expect("out-of-range targets clamp instead of erroring");
+        assert_eq!(under.target_utilization, Some(0.0));
+    }
+
+    #[test]
+    fn stochastic_parameters_and_seed_reach_the_config() {
+        let input = ConfigRequest {
+            time_limit_ms: Some(1_234),
+            population_size: Some(42),
+            max_generations: Some(7),
+            crossover_rate: Some(0.5),
+            mutation_rate: Some(0.25),
+            seed: Some(99),
+            ..config_input()
+        };
+        let config = build_config(Some(input)).expect("valid tuning parameters");
+        assert_eq!(config.time_limit_ms, 1_234);
+        assert_eq!(config.population_size, 42);
+        assert_eq!(config.max_generations, 7);
+        assert_eq!(config.crossover_rate, 0.5);
+        assert_eq!(config.mutation_rate, 0.25);
+        assert_eq!(config.seed, Some(99));
+    }
+
+    // ---- SolveOutput::accounting ----
+
+    fn result_with(placed: usize, requested: usize) -> SolveResult<f64> {
+        let mut result = SolveResult::new();
+        result.placements = (0..placed)
+            .map(|i| Placement::new_2d("part".to_string(), i, 0.0, 0.0, 0.0))
+            .collect();
+        result.total_requested = requested;
+        result
+    }
+
+    #[test]
+    fn partial_packing_reports_instance_level_shortfall() {
+        let (unplaced_count, all_placed, _, _) = SolveOutput::accounting(&result_with(3, 5));
+        assert_eq!(unplaced_count, 2);
+        assert!(!all_placed);
+    }
+
+    #[test]
+    fn complete_packing_reports_all_placed() {
+        let (unplaced_count, all_placed, _, _) = SolveOutput::accounting(&result_with(5, 5));
+        assert_eq!(unplaced_count, 0);
+        assert!(all_placed);
+    }
+
+    #[test]
+    fn shortfall_saturates_instead_of_underflowing() {
+        // `total_requested` is set at the top-level entry point; a solver path
+        // that ever reports more placements than requested must not wrap around.
+        let (unplaced_count, all_placed, _, _) = SolveOutput::accounting(&result_with(4, 0));
+        assert_eq!(unplaced_count, 0);
+        assert!(all_placed);
+    }
+
+    #[test]
+    fn used_utilization_guards_against_empty_footprint() {
+        let mut result = result_with(0, 2);
+        result.total_piece_area = 100.0;
+        result.used_bounding_box = [0.0, 0.0];
+        let (_, _, bbox, used_utilization) = SolveOutput::accounting(&result);
+        assert_eq!(bbox, [0.0, 0.0]);
+        assert_eq!(used_utilization, 0.0, "must not divide by a zero footprint");
+    }
+
+    #[test]
+    fn used_utilization_is_area_over_used_bounding_box() {
+        let mut result = result_with(1, 1);
+        result.total_piece_area = 50.0;
+        result.used_bounding_box = [10.0, 20.0];
+        let (_, _, bbox, used_utilization) = SolveOutput::accounting(&result);
+        assert_eq!(bbox, [10.0, 20.0]);
+        assert_eq!(used_utilization, 0.25);
+    }
+
+    // ---- input deserialization defaults ----
+
+    #[test]
+    fn geometry_2d_input_defaults_to_a_single_unflipped_copy() {
+        let input: Geometry2DRequest =
+            serde_json::from_str(r#"{"id":"a","polygon":[[0,0],[1,0],[1,1]]}"#)
+                .expect("quantity/rotations/holes/allow_flip are all optional");
+        assert_eq!(input.quantity, 1);
+        assert!(!input.allow_flip);
+        assert!(input.holes.is_none());
+        assert!(input.rotations.is_none());
+    }
+
+    #[test]
+    fn geometry_3d_input_defaults_to_a_single_copy() {
+        let input: Geometry3DRequest = serde_json::from_str(r#"{"id":"b","dimensions":[1,2,3]}"#)
+            .expect("quantity/mass/orientation are all optional");
+        assert_eq!(input.quantity, 1);
+        assert!(input.mass.is_none());
+        assert!(input.orientation.is_none());
+    }
+
+    #[test]
+    fn boundary_3d_input_defaults_to_no_physics() {
+        let input: Boundary3DRequest =
+            serde_json::from_str(r#"{"dimensions":[10,10,10]}"#).expect("physics flags default");
+        assert!(!input.gravity);
+        assert!(!input.stability);
+        assert!(input.max_mass.is_none());
+    }
+
+    #[test]
+    fn empty_config_object_is_accepted() {
+        let input: ConfigRequest =
+            serde_json::from_str("{}").expect("every config key is optional");
+        assert!(build_config(Some(input)).is_ok());
+    }
+
+    // ---- strict input contract (shared canonical request types) ----
+
+    #[test]
+    fn misspelled_geometry_key_is_rejected() {
+        // Silently defaulting a misspelled `quantity` to 1 is the worst failure
+        // shape available: the solve succeeds and quietly places the wrong number
+        // of parts. The canonical request types reject unknown keys instead.
+        let err = serde_json::from_str::<Geometry2DRequest>(
+            r#"{"id":"a","polygon":[[0,0],[1,0],[1,1]],"quantiy":5}"#,
+        )
+        .expect_err("unknown geometry key must be rejected");
+        assert!(
+            err.to_string().contains("quantiy"),
+            "error should name the unknown key, got: {err}"
+        );
+    }
+
+    #[test]
+    fn misspelled_config_key_is_rejected() {
+        let err = serde_json::from_str::<ConfigRequest>(r#"{"stratgy":"nfp"}"#)
+            .expect_err("unknown config key must be rejected");
+        assert!(
+            err.to_string().contains("stratgy"),
+            "error should name the unknown key, got: {err}"
+        );
+    }
+
+    #[test]
+    fn misspelled_boundary_key_is_rejected() {
+        assert!(
+            serde_json::from_str::<Boundary2DRequest>(r#"{"width":10,"hieght":20}"#).is_err(),
+            "unknown boundary key must be rejected"
+        );
+        assert!(
+            serde_json::from_str::<Boundary3DRequest>(r#"{"dimensions":[1,2,3],"gravty":true}"#)
+                .is_err(),
+            "unknown 3D boundary key must be rejected"
+        );
+    }
+
+    #[test]
+    fn multi_sheet_survives_on_the_shared_config_type() {
+        // `multi_sheet` is read directly off the request in `solve_2d` rather than
+        // through `build_config`, so the shared type must still carry it.
+        let input: ConfigRequest =
+            serde_json::from_str(r#"{"multi_sheet":true}"#).expect("multi_sheet is a known key");
+        assert_eq!(input.multi_sheet, Some(true));
+    }
 }

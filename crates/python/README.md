@@ -46,7 +46,7 @@ boundary = {"width": 500, "height": 300}
 
 # Configure solver
 config = {
-    "strategy": "nfp",      # Options: blf, nfp, ga, brkga, sa
+    "strategy": "nfp",      # Options: blf, nfp, ga, brkga, sa, gdrr, alns
     "spacing": 2.0,         # Gap between parts
     "time_limit_ms": 30000  # 30 second timeout
 }
@@ -108,6 +108,11 @@ print(f"Containers used: {result['boundaries_used']}")
 Solve a 2D nesting problem.
 
 **Parameters:**
+
+> Keys are validated strictly: an unrecognized key in `geometries`, `boundary`
+> or `config` raises `ValueError` naming it, rather than being ignored. A typo
+> can therefore never silently fall back to a default.
+
 - `geometries`: List of geometry definitions
   - `id` (str): Unique identifier
   - `polygon` (list): Vertices as [[x, y], ...]
@@ -119,7 +124,7 @@ Solve a 2D nesting problem.
   - `width`, `height` (float): Rectangle dimensions, OR
   - `polygon` (list): Custom boundary shape
 - `config`: Solver configuration (optional)
-  - `strategy` (str): "blf", "nfp", "ga", "brkga", "sa"
+  - `strategy` (str): "blf", "nfp", "ga", "brkga", "sa", "gdrr", "alns"
   - `spacing` (float): Gap between geometries
   - `margin` (float): Gap from boundary
   - `time_limit_ms` (int): Timeout in milliseconds
@@ -172,6 +177,8 @@ Solve a 3D bin packing problem.
 | `ga` | Slow | Best | Small instances, max quality |
 | `brkga` | Slow | Best | Complex constraints |
 | `sa` | Medium | Better | Balanced speed/quality |
+| `gdrr` | Medium | Better | 2D, ruin-and-recreate on dense layouts |
+| `alns` | Medium | Better | 2D, adaptive neighborhood search |
 
 ## Requirements
 

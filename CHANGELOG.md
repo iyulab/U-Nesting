@@ -7,8 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Unit tests for the Python bindings** (`u-nesting-python`), which previously
+  had none: the crate was compiled by CI but nothing asserted its runtime
+  behavior, unlike every other binding surface. The new module covers the
+  interpreter-independent half of the contract — configuration building
+  (strategy parsing, rejection of unknown names, non-negative/finite `spacing`
+  and `margin`, `target_utilization` clamping, tuning parameters and seed),
+  the derived output accounting (instance-level unplaced count with saturating
+  subtraction, `all_placed`, and the zero-footprint guard in
+  `used_utilization`), and the `serde` defaults of every input type.
+
+### Changed (breaking, Python bindings)
+
+- **The Python bindings now reject unknown keys in `geometries`, `boundary` and
+  `config`** instead of ignoring them. They deserialize the same canonical
+  request types as the C and WebAssembly bindings, which have rejected unknown
+  keys since the strictness sweep; the Python bindings kept a private copy of
+  those types and so were the one surface still accepting them. A misspelled key
+  used to be discarded silently — `{"quantiy": 5}` produced a solve for one copy
+  instead of five, with no error anywhere — and now raises `ValueError` naming
+  the unknown key and listing the accepted ones. Callers passing extra keys must
+  remove them. Field names, defaults and result shapes are unchanged.
+
+### Fixed
+
+- **`available_strategies()` in the Python bindings omitted `gdrr` and `alns`.**
+  Both solve 2D problems in this build — and are advertised by the WebAssembly
+  bindings — but Python callers had no way to discover them from the library
+  itself. The published list, the type stub and the README now include them.
+  Exact (MILP) strategies remain unlisted on purpose: their public path handles
+  axis-aligned rectangles only.
+
 ### Changed
 
+- The `i_overlay` bump below is now verified on the Python bindings as well:
+  `u-nesting-python` compiles against 8.1 and, driven through a real
+  interpreter, `solve_2d` (`nfp`, the strategy that exercises `i_overlay`) and
+  `solve_3d` (`ep`) place every requested instance.
 - Bump `i_overlay` dependency from 1.9 to 8.1 (dependency freshness sweep,
   Tier 3 breaking migration). Crate usage is confined to three stable
   paths — `core::fill_rule::FillRule`, `core::overlay_rule::OverlayRule`,

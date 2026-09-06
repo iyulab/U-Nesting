@@ -103,5 +103,9 @@ def version() -> str:
     ...
 
 def available_strategies() -> List[str]:
-    """List available optimization strategies."""
+    """List available optimization strategies.
+
+    Returns the union of 2D and 3D strategy names: ``nfp``, ``gdrr`` and
+    ``alns`` apply to 2D nesting, ``ep`` to 3D packing, the rest to both.
+    """
     ...
