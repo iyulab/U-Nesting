@@ -89,6 +89,16 @@ jobs:
             [ -d ../../foundation/u-numflow ] || git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
             [ -d ../../algorithms/u-metaheur ] || git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
             [ -d ../../algorithms/u-geometry ] || git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
+      # Publish gate: a wheel that builds is not a wheel that imports. Install the
+      # freshly built artifact and drive it, so a broken extension fails here
+      # rather than on a user's first `pip install`. Restricted to the native
+      # target — aarch64 wheels are cross-built in the manylinux container and
+      # cannot be executed on this x86_64 runner.
+      - name: Wheel smoke test
+        if: matrix.target == 'x86_64'
+        run: |
+          pip install --no-index --find-links dist u-nesting
+          python scripts/python_wheel_smoke.py
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -122,6 +132,13 @@ jobs:
           target: ${{ matrix.target == 'x64' && 'x86_64-pc-windows-msvc' || 'i686-pc-windows-msvc' }}
           args: --release --out dist -m crates/python/Cargo.toml
           sccache: 'true'
+      # Publish gate — see the linux job. Both matrix targets here are native to
+      # the runner, so this always runs.
+      - name: Wheel smoke test
+        shell: bash
+        run: |
+          pip install --no-index --find-links dist u-nesting
+          python scripts/python_wheel_smoke.py
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -154,6 +171,13 @@ jobs:
           target: ${{ matrix.target }}-apple-darwin
           args: --release --out dist -m crates/python/Cargo.toml
           sccache: 'true'
+      # Publish gate — see the linux job. `macos-latest` runners are arm64, so
+      # only the aarch64 wheel is native here; the x86_64 one is cross-built.
+      - name: Wheel smoke test
+        if: matrix.target == 'aarch64'
+        run: |
+          pip install --no-index --find-links dist u-nesting
+          python scripts/python_wheel_smoke.py
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

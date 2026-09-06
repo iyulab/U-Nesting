@@ -27,6 +27,14 @@ nul
 # Generated files
 crates/ffi/include/
 
+# Python wheels (`maturin build --out dist`, also produced by the publish workflow)
+/dist/
+*.whl
+
+# NuGet packages (`dotnet pack -o ./nupkg`, also produced by the release workflow)
+/nupkg/
+*.nupkg
+
 # Benchmarks and datasets
 datasets/
 benchmark/results/
