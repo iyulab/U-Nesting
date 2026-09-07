@@ -1,6 +1,7 @@
 //! Benchmarks for 3D bin packing.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
 use u_nesting_core::solver::Solver;
 use u_nesting_d3::{Boundary3D, Geometry3D, Packer3D};
 

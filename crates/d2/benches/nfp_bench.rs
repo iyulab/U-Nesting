@@ -3,7 +3,8 @@
 //! Measures NFP computation, geometry creation, and solver performance
 //! at various scales.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use std::hint::black_box;
 use u_nesting_core::solver::Solver;
 use u_nesting_d2::{Boundary2D, Geometry2D, Nester2D};
 
