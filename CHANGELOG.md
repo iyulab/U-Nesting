@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-07
+
+A minor rather than a patch release for two independent reasons: the Python
+bindings now reject input they used to accept, and `rand`'s types — which appear
+in this crate's public generic bounds — have been replaced wholesale.
+
 ### Added
 
 - **Unit tests for the Python bindings** (`u-nesting-python`), which previously
@@ -43,10 +49,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **The minimum supported Rust version is now 1.89** (previously declared as
-  1.82), and `rand` has been updated from 0.9 to 0.10. The declared value is
-  now verified by building on that exact toolchain: 1.87 and below fail. The
-  random number sequences produced for a given seed are unchanged, so seeded
-  results are identical to the previous release.
+  1.82). The declared value is now verified by building on that exact toolchain:
+  1.87 and below fail.
+- **`rand` is now 0.10** (previously 0.9), and this is a breaking change at the
+  API boundary rather than an internal one: `rand::Rng` appears in the public
+  generic bounds of `u-nesting-core`'s genetic-algorithm and BRKGA entry points
+  (`run_with_rng`, `biased_crossover`, `order_crossover`, `swap_mutate` and
+  their neighbours), so a generator from `rand` 0.9 no longer satisfies them.
+  Callers that drive those APIs with their own generator must move to 0.10 as
+  well. The sequences produced for a given seed are unchanged, so seeded results
+  are identical to the previous release.
+- **`u-metaheur` is now required at 0.4 and `u-numflow` at 0.4** (previously 0.3
+  for both), following those crates' own `rand` 0.10 releases.
 - **`getrandom` is now 0.4** on WebAssembly targets. It reaches the browser
   entropy source through its `wasm_js` crate feature alone; the
   `RUSTFLAGS --cfg getrandom_backend="wasm_js"` that 0.3 required is no longer

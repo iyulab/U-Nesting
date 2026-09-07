@@ -40,7 +40,11 @@ while IFS= read -r line; do
     echo "::error file=Cargo.toml::internal dependency '${name}' is ${ver}, expected ${ws_version} (keep [workspace.dependencies] in lockstep with [workspace.package])"
     status=1
   fi
-done < <(grep -E '^u-nesting-[A-Za-z0-9_-]+ = \{ version = ' Cargo.toml)
+#    The pattern deliberately has no trailing hyphen: an earlier `u-nesting-` form
+#    matched every member crate except the `u-nesting` facade itself, and that pin
+#    silently sat at 0.3.1 while the workspace was 0.9.0 with this check reporting
+#    everything consistent.
+done < <(grep -E '^u-nesting[A-Za-z0-9_-]* = \{ version = ' Cargo.toml)
 
 # 2) C# binding.
 csproj="bindings/csharp/UNesting/UNesting.csproj"
@@ -63,8 +67,23 @@ else
   fi
 fi
 
+# 4) The changelog must have gained a heading for the version being released. A
+#    bump whose entry is still sitting under `## [Unreleased]` publishes a version
+#    whose consumers have no record of what they upgraded into, and none of the
+#    checks above would notice: every version string can agree while the changelog
+#    says nothing.
+changelog="CHANGELOG.md"
+if [[ -f "${changelog}" ]]; then
+  if grep -qE "^## \[${ws_version//./\\.}\]" "${changelog}"; then
+    echo "Changelog has an entry for ${ws_version}"
+  else
+    echo "::error file=${changelog}::no '## [${ws_version}]' heading — add the entry for this release in the same commit as the version bump (move it out of '## [Unreleased]')"
+    status=1
+  fi
+fi
+
 if [[ "${status}" -ne 0 ]]; then
-  echo "::error::Binding version mismatch — bump every release artifact to ${ws_version} together before publishing."
+  echo "::error::Release artifacts disagree — bring every version string and the changelog to ${ws_version} together before publishing."
   exit 1
 fi
 echo "All binding versions consistent at ${ws_version}"
