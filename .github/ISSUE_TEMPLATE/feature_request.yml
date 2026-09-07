@@ -1,0 +1,29 @@
+name: Change proposal
+description: Something the library cannot currently express
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What were you trying to do, and what got in the way? Describe the
+        problem rather than the patch — it leaves room for a better answer.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What you are doing instead
+      description: The workaround you currently use, if any, and what it costs.
+    validations:
+      required: false
+  - type: textarea
+    id: generality
+    attributes:
+      label: Who else needs this
+      description: >
+        Is this a general capability, or does it only make sense inside your
+        own domain? Both answers are fine — it decides where the change belongs.
+    validations:
+      required: false

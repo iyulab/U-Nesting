@@ -20,7 +20,7 @@ jobs:
     name: Version Consistency
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Bindings must share the workspace version
         run: bash scripts/check-version-consistency.sh
 
@@ -28,7 +28,7 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -36,8 +36,10 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo check --workspace --all-features
@@ -46,7 +48,7 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -54,8 +56,9 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
+          toolchain: stable
           components: rustfmt
       - run: cargo fmt --all -- --check
 
@@ -63,7 +66,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -71,10 +74,11 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
+          toolchain: stable
           components: clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo clippy --workspace --all-features -- -D warnings
@@ -87,7 +91,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -95,8 +99,10 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Run tests
@@ -108,7 +114,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -116,8 +122,10 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo doc --workspace --exclude u-nesting-python --no-deps --all-features
@@ -128,7 +136,7 @@ jobs:
     name: Benchmark Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -136,8 +144,10 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo bench --workspace --exclude u-nesting-python --no-run
@@ -146,7 +156,7 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -154,7 +164,9 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: taiki-e/install-action@cargo-audit
+      - uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2
+        with:
+          tool: cargo-audit
       - run: cargo audit
 
   coverage:
@@ -162,7 +174,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -170,15 +182,18 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
+          toolchain: stable
           components: llvm-tools-preview
-      - uses: taiki-e/install-action@cargo-llvm-cov
-      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2
+        with:
+          tool: cargo-llvm-cov
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
         with:
           files: lcov.info
           fail_ci_if_error: false
@@ -187,7 +202,7 @@ jobs:
     name: WASM Check + Runtime Smoke
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -195,17 +210,18 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
+          toolchain: stable
           targets: wasm32-unknown-unknown
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo check --workspace --exclude u-nesting-ffi --exclude u-nesting-python --exclude u-nesting-benchmark --target wasm32-unknown-unknown
       # `cargo check` only compiles; it cannot catch runtime panics (e.g. Instant /
       # thread on wasm) or wrong results. Build the actual wasm package and exercise
       # every strategy through a real solve in Node to guard against those regressions.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
       - name: Install wasm-pack
@@ -219,12 +235,12 @@ jobs:
     name: C# DTO Wire Contract
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       # Pure managed serialization/round-trip guards — no native library needed, so
       # no Rust toolchain or path dependencies. Pins C# request DTO JSON keys to the
       # canonical Rust `ConfigRequest` wire names (deny_unknown_fields), catching
       # drift like `generations` vs `max_generations` before it reaches a consumer.
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '10.0.x'
       - name: Run C# wire-contract tests
@@ -234,7 +250,7 @@ jobs:
     name: SemVer (cargo-semver-checks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Checkout path dependencies
         shell: bash
         run: |
@@ -242,12 +258,14 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Check public API against the latest crates.io release
-        uses: obi1kenobi/cargo-semver-checks-action@v2
+        uses: obi1kenobi/cargo-semver-checks-action@6b69fcf40e9b5fb17adeb57e4b6ecd020649a239 # v2
         with:
           package: u-nesting
 
@@ -255,7 +273,7 @@ jobs:
     name: Wire-schema CHANGELOG gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
       - name: Require a CHANGELOG entry when the wire schema changes

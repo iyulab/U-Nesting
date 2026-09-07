@@ -28,7 +28,7 @@ jobs:
       version: ${{ steps.read.outputs.version }}
       should_publish: ${{ steps.decide.outputs.should_publish }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 2
 
@@ -90,7 +90,7 @@ jobs:
             rid: osx-arm64
             artifact: libu_nesting_ffi.dylib
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Checkout path dependencies
         shell: bash
@@ -100,11 +100,12 @@ jobs:
           git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
           git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           save-if: false
 
@@ -112,7 +113,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }} -p u-nesting-ffi
 
       - name: Upload native artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-${{ matrix.rid }}
           path: target/${{ matrix.target }}/release/${{ matrix.artifact }}
@@ -125,33 +126,33 @@ jobs:
     needs: [check-version, build-native]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '10.0.x'
 
       - name: Download win-x64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: native-win-x64
           path: bindings/csharp/UNesting/runtimes/win-x64/native/
 
       - name: Download linux-x64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: native-linux-x64
           path: bindings/csharp/UNesting/runtimes/linux-x64/native/
 
       - name: Download osx-x64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: native-osx-x64
           path: bindings/csharp/UNesting/runtimes/osx-x64/native/
 
       - name: Download osx-arm64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: native-osx-arm64
           path: bindings/csharp/UNesting/runtimes/osx-arm64/native/
@@ -191,7 +192,7 @@ jobs:
           bash scripts/nuget_package_smoke.sh ./nupkg ${{ needs.check-version.outputs.version }}
 
       - name: Upload NuGet package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: nuget-package
           path: ./nupkg/*.nupkg

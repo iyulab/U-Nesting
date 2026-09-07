@@ -288,7 +288,7 @@
 
 **태스크**:
 - [x] 각 결함/개선사항별 GitHub 이슈 초안 작성
-- [x] `claudedocs/issues/` 디렉토리에 저장
+- [x] 이슈 초안을 저장소 밖 작업 문서로 관리
 - [x] 우선순위 및 심각도 분류
 
 ---
@@ -333,7 +333,7 @@
 | 시나리오 정의 | `benchmark/src/scenario.rs` | ✅ |
 | 테스트 결과 | `benchmark/results/` | ✅ |
 | 분석 리포트 | `benchmark/results/scenario_report.md` | ✅ |
-| 이슈 초안 | `claudedocs/issues/` | ✅ |
+| 이슈 초안 | 저장소 밖 작업 문서 | ✅ |
 | 시각화 결과 | `benchmark/visualizations/` | ⬜ 향후 |
 
 ### Phase 0 완료 기준
