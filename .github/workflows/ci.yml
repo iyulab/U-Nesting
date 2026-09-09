@@ -29,13 +29,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable
@@ -49,13 +42,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable
@@ -67,13 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable
@@ -92,13 +71,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable
@@ -115,13 +87,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable
@@ -137,13 +102,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable
@@ -157,13 +115,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2
         with:
           tool: cargo-audit
@@ -175,13 +126,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable
@@ -203,13 +147,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable
@@ -251,13 +188,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../algorithms ../../foundation
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
           toolchain: stable

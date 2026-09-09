@@ -19,18 +19,17 @@ updates:
         patterns:
           - "*"
 
-# NOTE — there is deliberately no `cargo` entry here.
-#
-# This crate declares sibling crates with a `path = "../../..."` dependency that
-# resolves only when the whole family is checked out together. Dependabot clones
-# this repository alone, so `cargo update` fails there:
-#
-#     error: failed to load source for dependency `<sibling>`
-#
-# (Reproduced with `cargo metadata` in a standalone clone: exit 101.) A cargo
-# entry would therefore be a job that fails every month while looking like
-# coverage. CI works because it clones the siblings explicitly first.
-#
-# Removing this limitation means replacing the path dependencies with registry
-# versions plus a `[patch.crates-io]` section in the development workspace —
-# a cross-repository change, tracked separately.
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      # Minor and patch land together. Majors stay separate: a breaking
+      # migration is a dedicated piece of work, not a routine bump.
+      cargo-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch

@@ -61,13 +61,6 @@ jobs:
         target: [x86_64, aarch64]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
@@ -78,17 +71,6 @@ jobs:
           args: --release --out dist -m crates/python/Cargo.toml
           sccache: 'true'
           manylinux: auto
-          # The host "Checkout path dependencies" step clones the sibling crates
-          # OUTSIDE the workspace (../../foundation, ../../algorithms), which the
-          # manylinux Docker container does not mount — so `cargo metadata` fails to
-          # read u-geometry et al. Re-clone them INSIDE the container at the same
-          # relative paths so the path dependencies resolve. Idempotent guard in
-          # case the host tree happens to be visible.
-          before-script-linux: |
-            mkdir -p ../../foundation ../../algorithms
-            [ -d ../../foundation/u-numflow ] || git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-            [ -d ../../algorithms/u-metaheur ] || git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-            [ -d ../../algorithms/u-geometry ] || git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       # Publish gate: a wheel that builds is not a wheel that imports. Install the
       # freshly built artifact and drive it, so a broken extension fails here
       # rather than on a user's first `pip install`. Restricted to the native
@@ -115,13 +97,6 @@ jobs:
         target: [x64]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
@@ -155,13 +130,6 @@ jobs:
         target: [x86_64, aarch64]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
@@ -185,10 +153,11 @@ jobs:
           path: dist
           retention-days: 1
 
-  # No sdist: the crate has out-of-tree path dependencies (../../foundation,
-  # ../../algorithms) that maturin cannot bundle into a self-contained source
-  # distribution (`cargo package --list` fails on the sibling workspaces). Wheels
-  # are the published artifact; building from source requires the full umbrella repo.
+  # No sdist yet. The original blocker — out-of-tree path dependencies that
+  # maturin could not bundle into a self-contained source distribution — no
+  # longer applies now that every dependency is declared by registry version.
+  # Wheels remain the published artifact until an sdist job is added and its
+  # build-from-source path is verified.
 
   publish-testpypi:
     name: Publish to TestPyPI

@@ -22,13 +22,6 @@ jobs:
       - name: Verify binding versions are in lockstep
         run: bash scripts/check-version-consistency.sh
 
-      - name: Checkout path dependencies
-        shell: bash
-        run: |
-          mkdir -p ../../foundation ../../algorithms
-          git clone --depth 1 https://github.com/iyulab/u-numflow.git ../../foundation/u-numflow
-          git clone --depth 1 https://github.com/iyulab/u-metaheur.git ../../algorithms/u-metaheur
-          git clone --depth 1 https://github.com/iyulab/u-geometry.git ../../algorithms/u-geometry
 
       - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
         with:
